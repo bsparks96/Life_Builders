@@ -9,6 +9,7 @@ Base.metadata.create_all(bind=engine)
 app.include_router(user_routes.router, prefix="/api")
 app.include_router(courseRoute.router, prefix="/api", tags=["Courses"])
 app.include_router(clientRoute.router, prefix="/api", tags=["Clients"])
+app.include_router(user_routes.router, prefix="/api", tags=["Users"])
 
 
 @app.get("/")

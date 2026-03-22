@@ -12,7 +12,8 @@ CREATE TABLE Users (
     username VARCHAR(100) NOT NULL UNIQUE,
     firstName VARCHAR(100),
     lastName VARCHAR(100),
-    userRole ENUM('Admin', 'Staff', 'Guest') DEFAULT 'Staff'
+    userRole ENUM('Admin', 'Staff', 'Guest') DEFAULT 'Staff',
+    passwordHash VARCHAR(255) NOT NULL
 ) AUTO_INCREMENT = 10000;
 
 -- ========================

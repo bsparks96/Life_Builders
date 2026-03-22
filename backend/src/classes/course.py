@@ -8,7 +8,7 @@ class CourseSummary(BaseModel):
     courseName: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class InstructorOut(BaseModel):
     userID: int

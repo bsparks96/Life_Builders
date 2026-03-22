@@ -7,6 +7,7 @@ class User(Base):
 
     userID = Column(Integer, primary_key=True, index=True)
     username = Column(String(100), unique=True, nullable=False)
+    passwordHash = Column(String(255), nullable=True)   # update this to have nullable=False once fully developed and old users are removed
     firstName = Column(String(100))
     lastName = Column(String(100))
     userRole = Column(String(50))

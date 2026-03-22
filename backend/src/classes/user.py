@@ -6,4 +6,15 @@ class UserOut(BaseModel):
     lastName: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    firstName: str
+    lastName: str
+    userRole: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
