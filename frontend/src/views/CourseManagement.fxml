@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="controllers.CourseManagementController">
+
+    <!-- Top new course button -->
+    <top>
+        <HBox alignment="CENTER_RIGHT" spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Button fx:id="newCourseButton" text="New Course" style="-fx-background-color: green; -fx-text-fill: white;" onAction="#handleNewCourseClick"/>
+        </HBox>
+    </top>
+
+    <!-- Left course list and sorting -->
+    <left>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label text="Course Name" style="-fx-font-weight: bold;"/>
+            <ListView fx:id="courseListView" prefWidth="200" prefHeight="400"/>
+            <HBox spacing="10">
+                <Label text="Sort:" />
+                <Button text="Alphabetically" onAction="#sortAlphabetically"/>
+                <Button text="Most Recent" onAction="#sortMostRecent"/>
+            </HBox>
+        </VBox>
+    </left>
+
+    <!-- Center course detail view or new course form -->
+    <center>
+        <StackPane fx:id="detailsPane">
+            <VBox fx:id="courseDetailPane" spacing="10" visible="false" managed="false">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20"/>
+                </padding>
+
+                <Label text="Course Name:" />
+                <TextField fx:id="courseNameField" maxWidth="300"/>
+
+                <Label text="Instructors:" />
+                <VBox fx:id="instructorBox" spacing="5" maxWidth="300">
+                    <HBox spacing="10">
+                        <ComboBox fx:id="instructorCombo" promptText="Select Instructor"/>
+                        <Button text="+" onAction="#addInstructor"/>
+                    </HBox>
+                    <ListView fx:id="instructorListView" maxHeight="100"/>
+                </VBox>
+
+                <Label text="Course Length (weeks):" />
+                <TextField fx:id="courseLengthField" maxWidth="100"/>
+
+                <Label text="Iterations (optional):" />
+                <VBox fx:id="iterationsBox" spacing="5">
+                    <HBox spacing="10">
+                        <DatePicker fx:id="iterationStartPicker" promptText="Start Date" maxWidth="150"/>
+                        <DatePicker fx:id="iterationEndPicker" promptText="End Date" maxWidth="150"/>
+                        <Button text="Add Iteration" onAction="#handleAddIteration"/>
+                    </HBox>
+                </VBox>
+
+                <Button text="Save" onAction="#handleSaveCourse"/>
+            </VBox>
+        </StackPane>
+    </center>
+
+</BorderPane>

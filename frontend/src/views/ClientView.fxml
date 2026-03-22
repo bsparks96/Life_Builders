@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ClientViewController">
+
+	
+    <left>
+        <VBox spacing="10">
+        	<padding>
+        		<Insets top="10" right="10" bottom="10" left="10"/>
+        	</padding>
+            <Label text="Client Name" style="-fx-font-weight: bold;"/>
+            <ListView fx:id="clientList" prefHeight="400" />
+            <HBox spacing="10" alignment="CENTER">
+                <Label text="Sort:"/>
+                <Button fx:id="sortAlphaButton" text="Alphabetically" />
+                <Button fx:id="sortRecentButton" text="Most Recent" />
+            </HBox>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="15" >
+        	<padding>
+        		<Insets top="10" right="10" bottom="10" left="10"/>
+        	</padding>
+            <Label text="Client Information:" style="-fx-underline: true; -fx-font-weight: bold;" />
+            <GridPane hgap="10" vgap="5">
+                <Label text="Full Name:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                <Label fx:id="fullNameLabel" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+                <Label text="Date Of Birth:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                <Label fx:id="dobLabel" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+                <Label text="Gender:" GridPane.rowIndex="1" GridPane.columnIndex="2" />
+                <Label fx:id="genderLabel" GridPane.rowIndex="1" GridPane.columnIndex="3" />
+
+                <Label text="Education Level:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                <Label fx:id="educationLabel" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+            </GridPane>
+
+            <Label text="Current Course:" style="-fx-font-weight: bold;" />
+            <GridPane hgap="10" vgap="5">
+                <Label text="Course Name:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <Label fx:id="currentCourseLabel" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="Estimated Completion Date:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                <Label fx:id="currentCourseDateLabel" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+            </GridPane>
+
+            <Label text="Completed Courses:" style="-fx-font-weight: bold;" />
+            <VBox fx:id="completedCoursesBox" spacing="5"/>
+
+            <Label text="Incarceration Periods:" style="-fx-font-weight: bold;" />
+            <VBox fx:id="incarcerationPeriodsBox" spacing="5"/>
+        </VBox>
+    </center>
+</BorderPane>

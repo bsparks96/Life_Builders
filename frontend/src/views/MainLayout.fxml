@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="controllers.MainLayoutController">
+
+    <!-- Shared Header (top navigation bar) -->
+    <top>
+        <fx:include fx:id="headerController" source="Header.fxml"/>
+    </top>
+
+    <!-- Dynamic content will go here -->
+    <center>
+        <StackPane fx:id="contentArea"/>
+    </center>
+</BorderPane>
