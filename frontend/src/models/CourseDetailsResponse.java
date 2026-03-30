@@ -24,12 +24,3 @@ public class CourseDetailsResponse {
         this.iterations = iterations;
     }
 }
-/*
-class InstructorOut {
-    public String instructorName;  // or use userID if you're still working on names
-}
-
-class IterationOut {
-    public String startDate;
-    public String endDate;
-}*/

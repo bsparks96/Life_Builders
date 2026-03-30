@@ -16,4 +16,5 @@ module LifeBuilders_FrontEnd {
     opens application to javafx.graphics, javafx.fxml;
     opens controllers to javafx.fxml;
     opens models to com.fasterxml.jackson.databind;
+    opens services to com.fasterxml.jackson.databind;
 }

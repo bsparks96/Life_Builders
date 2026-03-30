@@ -33,3 +33,17 @@ class ClientCreate(BaseModel):
     clientEducation: str
     incarcerationPeriods: Optional[List[IncarcerationPeriod]] = []
     coursesCompleted: Optional[List[CourseCompleted]] = []
+
+class ClientDetailsResponse(BaseModel):
+    clientID: int
+    fullName: str
+    dateOfBirth: date
+    gender: str
+    education: str
+
+    currentCourse: Optional[dict] = None
+    completedCourses: List[dict] = []
+    incarcerationPeriods: List[dict] = []
+
+    class Config:
+        from_attributes = True

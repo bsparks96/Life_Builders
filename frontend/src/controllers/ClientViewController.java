@@ -1,12 +1,17 @@
 package controllers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import models.Client;
+import models.ClientDetailsResponse;
+import services.ClientService;
+import utils.ClientDetailsCache;
 
 public class ClientViewController {
 
@@ -24,22 +29,28 @@ public class ClientViewController {
 
     @FXML private VBox completedCoursesBox;
     @FXML private VBox incarcerationPeriodsBox;
+    
+    private Map<String, Integer> clientNameToID = new HashMap<>();
 
     @FXML
     public void initialize() {
         try {
-            List<Client> clients = services.ClientService.fetchAllClients();
-            for (Client c : clients) {
-                clientList.getItems().add(c.getFullName());
-            }
+        	List<Client> clients = services.ClientService.fetchAllClients();
+        	for (Client c : clients) {
+        	    String fullName = c.getFullName();
+
+        	    clientList.getItems().add(fullName);
+        	    clientNameToID.put(fullName, c.getClientID());
+        	}
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         clientList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
-                loadClientInfo(newVal);
-            }
+        	Integer clientID = clientNameToID.get(newVal);
+        	if (clientID != null) {
+        	    loadClientInfo(clientID);
+        	}
         });
 
         sortAlphaButton.setOnAction(e -> clientList.getItems().sort(String::compareToIgnoreCase));
@@ -47,26 +58,46 @@ public class ClientViewController {
     }
 
 
-    private void loadClientInfo(String clientName) {
-        // Stub data for now
-        fullNameLabel.setText(clientName);
-        dobLabel.setText("01/01/1990");
-        genderLabel.setText("Male");
-        educationLabel.setText("GED");
+    private void loadClientInfo(int clientID) {
+    	ClientDetailsResponse client = ClientDetailsCache.getClient(clientID);
+    	
+    	if (client == null) {
+    	    client = ClientService.getClientDetails(clientID);
+    	}
 
-        currentCourseLabel.setText("Job Skills Training");
-        currentCourseDateLabel.setText("12/15/2025");
+        if (client == null) return;
 
+        fullNameLabel.setText(client.getFullName());
+        dobLabel.setText(client.getDateOfBirth());
+        genderLabel.setText(client.getGender());
+        educationLabel.setText(client.getEducation());
+
+        // Current course
+        if (client.getCurrentCourse() != null) {
+            currentCourseLabel.setText(client.getCurrentCourse().getCourseName());
+            currentCourseDateLabel.setText(
+                client.getCurrentCourse().getStartDate() + " - " +
+                client.getCurrentCourse().getEndDate()
+            );
+        } else {
+            currentCourseLabel.setText("None");
+            currentCourseDateLabel.setText("");
+        }
+
+        // Completed courses
         completedCoursesBox.getChildren().clear();
-        completedCoursesBox.getChildren().addAll(
-            new Label("Anger Management – 03/10/2024"),
-            new Label("Budgeting Basics – 06/01/2024")
-        );
+        for (ClientDetailsResponse.CompletedCourse course : client.getCompletedCourses()) {
+            completedCoursesBox.getChildren().add(
+                new Label(course.getCourseName() + " – " + course.getCompletionDate())
+            );
+        }
 
+        // Incarceration periods
         incarcerationPeriodsBox.getChildren().clear();
-        incarcerationPeriodsBox.getChildren().addAll(
-            new Label("01/01/2018 – 01/01/2020 (2 yrs)"),
-            new Label("03/15/2021 – 10/15/2022 (1 yr, 7 mos)")
-        );
+        for (ClientDetailsResponse.IncarcerationPeriod period : client.getIncarcerationPeriods()) {
+            incarcerationPeriodsBox.getChildren().add(
+                new Label(period.getStartDate() + " – " + period.getEndDate())
+            );
+        }
     }
 }

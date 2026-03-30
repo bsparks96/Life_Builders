@@ -8,8 +8,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import models.ClientDetailsResponse;
 import services.ClientService;
 import services.UserService;
+import utils.ClientDetailsCache;
 import utils.CourseCache;
 import javafx.scene.Parent;
 import javafx.scene.Node;
@@ -39,18 +41,10 @@ public class MainLayoutController {
             HBox header = loader.load();
             headerControllerInstance = loader.getController();
             this.headerController.getChildren().setAll(header.getChildren());
-            try {
-                Map<String, Integer> courseMap = ClientService.fetchAllCourses();
-                CourseCache.setAvailableCourses(courseMap);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                Map<String, Integer> userMap = UserService.fetchAllUsers();  // or UserService if you make one
-                utils.UserCache.setAvailableUsers(userMap);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
+            // Start background data loading
+            loadDataInBackground();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -71,6 +65,39 @@ public class MainLayoutController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    private void loadDataInBackground() {
+        new Thread(() -> {
+            try {
+
+                // Load courses
+                if (CourseCache.getCourseNames().isEmpty()) {
+                    Map<String, Integer> courseMap = ClientService.fetchAllCourses();
+                    CourseCache.setAvailableCourses(courseMap);
+                    System.out.println("Courses loaded");
+                }
+
+                // Load users
+                if (utils.UserCache.getUserNames().isEmpty()) {
+                    Map<String, Integer> userMap = UserService.fetchAllUsers();
+                    utils.UserCache.setAvailableUsers(userMap);
+                    System.out.println("Users loaded");
+                }
+
+                // Load client details
+                if (!ClientDetailsCache.isLoaded()) {
+                    List<ClientDetailsResponse> clients = ClientService.fetchAllClientDetails();
+                    ClientDetailsCache.setAllClientDetails(clients);
+                    System.out.println("Client details loaded");
+                }
+
+                System.out.println("All background data loaded");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
     
 }

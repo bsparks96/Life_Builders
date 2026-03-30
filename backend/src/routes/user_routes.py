@@ -52,6 +52,7 @@ def create_user(
 
 @router.post("/users/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
+    print("LOGIN HIT:", user.username)
     # 1. Lookup user
     db_user = get_user_by_username(db, user.username)
     if not db_user:

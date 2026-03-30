@@ -1,8 +1,10 @@
 package services;
 
 import models.Client;
+import models.ClientDetailsResponse;
 import models.ClientEntryRequest;
 import utils.CourseCache;
+import utils.SessionManager;
 import utils.ApiConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,6 +72,32 @@ public class ClientService {
         return nameToIdMap;
     }
     
+    public static List<ClientDetailsResponse> fetchAllClientDetails() {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/details"))
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Failed to fetch all client details: HTTP " + response.statusCode());
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response.body(),
+                    mapper.getTypeFactory().constructCollectionType(List.class, ClientDetailsResponse.class));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
     
     public static boolean submitClientEntry(ClientEntryRequest requestData) {
         try {
@@ -95,6 +123,31 @@ public class ClientService {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+    
+    public static ClientDetailsResponse getClientDetails(int clientID) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/details/" + clientID))
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Failed to fetch client details: HTTP " + response.statusCode());
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response.body(), ClientDetailsResponse.class);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
     

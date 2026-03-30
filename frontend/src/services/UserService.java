@@ -3,6 +3,7 @@ package services;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import utils.ApiConfig;
+import utils.SessionManager;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -19,6 +20,7 @@ public class UserService {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
+                .header("Authorization",  "Bearer " + SessionManager.getToken())
                 .GET()
                 .build();
 
