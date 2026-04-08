@@ -82,7 +82,7 @@ public class CourseManagementController {
     private void sortMostRecent() {
         // TODO: Sort the list by recent dates
     }
-
+/*
     @FXML
     private void handleNewCourse() {
         detailsPane.getChildren().clear();
@@ -98,7 +98,7 @@ public class CourseManagementController {
         instructorListView.getSelectionModel().clearSelection();
 
     }
-    
+*/  
     @FXML
     private void handleAddIteration(ActionEvent event) {
         HBox iterationRow = new HBox(10);
@@ -217,9 +217,11 @@ public class CourseManagementController {
 		
 	}
 
-	@FXML
+    @FXML
     private void handleNewCourseClick(ActionEvent event) {
         // Toggle visibility of form or clear fields as needed
+
+    	System.out.println("New Course clicked");
         courseNameField.clear();
         instructorListView.getItems().clear();
         courseLengthField.clear();
@@ -228,8 +230,8 @@ public class CourseManagementController {
         courseDetailPane.setVisible(true);
         courseDetailPane.setManaged(true);
         instructorCombo.setValue(null);
+        detailsPane.getChildren().removeIf(node -> node != courseDetailPane);
     }
-    
     
 
     private void showCourseDetails(String courseName) {
@@ -240,7 +242,17 @@ public class CourseManagementController {
         }
 
         try {
-            CourseDetailsResponse details = CourseService.fetchCourseDetails(courseID);
+        	CourseDetailsResponse details = CourseCache.getCourseDetails(courseID);
+
+        	if (details == null) {
+        	    // fallback if cache isn't ready yet
+        	    try {
+        	        details = CourseService.fetchCourseDetails(courseID);
+        	    } catch (Exception e) {
+        	        e.printStackTrace();
+        	        return;
+        	    }
+        	}
 
             VBox detailBox = new VBox(10);
             detailBox.getChildren().add(new Text(courseName + ":"));
@@ -263,7 +275,18 @@ public class CourseManagementController {
             // Placeholder for future clickable past iterations
             detailBox.getChildren().add(new Label("Past Iterations: (clickable items to view clients)"));
 
+            /*
             detailsPane.getChildren().clear();
+            detailsPane.getChildren().add(detailBox);
+            */
+            
+            courseDetailPane.setVisible(false);
+            courseDetailPane.setManaged(false);
+
+            // Remove any previous detail views (but NOT the form)
+            detailsPane.getChildren().removeIf(node -> node != courseDetailPane);
+
+            // Add the new detail view
             detailsPane.getChildren().add(detailBox);
 
         } catch (Exception e) {

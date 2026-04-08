@@ -9,7 +9,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import models.ClientDetailsResponse;
+import models.CourseDetailsResponse;
 import services.ClientService;
+import services.CourseService;
 import services.UserService;
 import utils.ClientDetailsCache;
 import utils.CourseCache;
@@ -90,6 +92,14 @@ public class MainLayoutController {
                     List<ClientDetailsResponse> clients = ClientService.fetchAllClientDetails();
                     ClientDetailsCache.setAllClientDetails(clients);
                     System.out.println("Client details loaded");
+                }
+                
+                if (!CourseCache.isDetailsLoaded()) {
+                    List<CourseDetailsResponse> courses = CourseService.fetchAllCourseDetails();
+                    if (courses != null) {
+                        CourseCache.setCourseDetails(courses);
+                        System.out.println("Course details loaded into cache");
+                    }
                 }
 
                 System.out.println("All background data loaded");

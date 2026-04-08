@@ -23,4 +23,8 @@ public class CourseDetailsResponse {
     public void setIterations(List<IterationOut> iterations) {
         this.iterations = iterations;
     }
+
+	public Integer getCourseID() {
+		return courseID;
+	}
 }

@@ -11,25 +11,33 @@ def get_all_courses(db: Session = Depends(get_db)):
     return db.query(Course).all()
 
 
-@router.get("/courseDetails/", response_model=CourseDetailsResponse)
-def get_course_details(courseID: int, db: Session = Depends(get_db)):
+def build_course_details(courseID: int, db: Session):
     # 1. Get base course info
     course = db.query(Course).filter(Course.courseID == courseID).first()
     if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
+        return None
 
-    # 2. Get instructors for the course
+    # 2. Get instructors
     instructor_links = db.query(CourseHasInstructors).filter(
         CourseHasInstructors.courseID == courseID
     ).all()
-    instructors = [InstructorOut(userID=inst.userID) for inst in instructor_links]
 
-    # 3. Get iterations for the course
+    instructors = [
+        InstructorOut(userID=inst.userID)
+        for inst in instructor_links
+    ]
+
+    # 3. Get iterations
     iterations = db.query(CourseIterations).filter(
         CourseIterations.courseID == courseID
     ).all()
+
     iteration_list = [
-        IterationOut(startDate=it.courseStartDate, endDate=it.courseEndDate) for it in iterations
+        IterationOut(
+            startDate=it.courseStartDate,
+            endDate=it.courseEndDate
+        )
+        for it in iterations
     ]
 
     return CourseDetailsResponse(
@@ -38,6 +46,30 @@ def get_course_details(courseID: int, db: Session = Depends(get_db)):
         instructors=instructors,
         iterations=iteration_list
     )
+
+
+@router.get("/courseDetails/{courseID}", response_model=CourseDetailsResponse)
+def get_course_details(courseID: int, db: Session = Depends(get_db)):
+    result = build_course_details(courseID, db)
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    return result
+
+
+@router.get("/courseDetails/", response_model=list[CourseDetailsResponse])
+def get_all_course_details(db: Session = Depends(get_db)):
+    courses = db.query(Course).all()
+
+    results = []
+
+    for course in courses:
+        details = build_course_details(course.courseID, db)
+        if details:
+            results.append(details)
+
+    return results
 
 
 @router.post("/courseCreate/")

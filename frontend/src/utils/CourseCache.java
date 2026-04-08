@@ -2,8 +2,10 @@ package utils;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import models.CourseDetailsResponse;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CourseCache {
@@ -13,6 +15,9 @@ public class CourseCache {
 
     // For looking up ID by name (reverse lookup)
     private static final Map<String, Integer> courseNameToIdMap = new HashMap<>();
+    
+    // NEW: store full course details
+    private static final Map<Integer, CourseDetailsResponse> courseDetailsMap = new HashMap<>();
 
     // List of all course names for UI dropdowns
     private static final ObservableList<String> courseNames = FXCollections.observableArrayList();
@@ -41,5 +46,21 @@ public class CourseCache {
     
     public static Integer getCourseID(String courseName) {
         return courseNameToIdMap.get(courseName);
+    }
+    
+    public static void setCourseDetails(List<CourseDetailsResponse> courses) {
+        courseDetailsMap.clear();
+
+        for (CourseDetailsResponse course : courses) {
+            courseDetailsMap.put(course.getCourseID(), course);
+        }
+    }
+
+    public static CourseDetailsResponse getCourseDetails(int courseID) {
+        return courseDetailsMap.get(courseID);
+    }
+
+    public static boolean isDetailsLoaded() {
+        return !courseDetailsMap.isEmpty();
     }
 }
