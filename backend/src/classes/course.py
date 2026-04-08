@@ -16,6 +16,7 @@ class InstructorOut(BaseModel):
 class IterationOut(BaseModel):
     startDate: date
     endDate: date
+    sessions: List[date] = []
 
 class CourseDetailsResponse(BaseModel):
     courseID: int
@@ -27,6 +28,7 @@ class IterationIn(BaseModel):
     courseStartDate: date
     courseEndDate: date
     courseLocation: Optional[str] = None
+    sessions: List[date] = []
 
 class CourseCreateRequest(BaseModel):
     courseName: str

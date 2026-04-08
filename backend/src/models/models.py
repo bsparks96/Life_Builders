@@ -74,3 +74,21 @@ class CourseHasClients(Base):
     client = relationship("Client", back_populates="completed_courses")
 
 
+class CourseSessions(Base):
+    __tablename__ = "CourseSessions"
+
+    sessionID = Column(Integer, primary_key=True, autoincrement=True)
+    courseID = Column(Integer, ForeignKey("Courses.courseID"))
+    iterationID = Column(Integer, ForeignKey("CourseIterations.iterationID"))
+    sessionDate = Column(Date)
+
+
+class SessionAttendance(Base):
+    __tablename__ = "SessionAttendance"
+
+    attendanceID = Column(Integer, primary_key=True, autoincrement=True)
+    sessionID = Column(Integer, ForeignKey("CourseSessions.sessionID"))
+    clientID = Column(Integer, ForeignKey("Clients.clientID"))
+    attendance = Column(Integer, default=0)
+
+

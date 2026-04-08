@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models.models import Course, CourseHasInstructors, CourseIterations, User
+from models.models import Course, CourseHasInstructors, CourseIterations, User, CourseSessions
 from utils.database import get_db
 from classes.course import CourseSummary, CourseDetailsResponse, InstructorOut, IterationOut, CourseCreateRequest
 
@@ -32,13 +32,23 @@ def build_course_details(courseID: int, db: Session):
         CourseIterations.courseID == courseID
     ).all()
 
-    iteration_list = [
-        IterationOut(
-            startDate=it.courseStartDate,
-            endDate=it.courseEndDate
+    iteration_list = []
+
+    for it in iterations:
+        # Get sessions for this iteration
+        sessions = db.query(CourseSessions).filter(
+            CourseSessions.iterationID == it.iterationID
+        ).all()
+
+        session_dates = [s.sessionDate for s in sessions]
+
+        iteration_list.append(
+            IterationOut(
+                startDate=it.courseStartDate,
+                endDate=it.courseEndDate,
+                sessions=session_dates
+            )
         )
-        for it in iterations
-    ]
 
     return CourseDetailsResponse(
         courseID=course.courseID,
@@ -97,13 +107,23 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
 
             # Step 3: Add iterations (optional)
         for iteration in request.iterations:
-            iteration = CourseIterations(
+            new_iteration = CourseIterations(
                 courseID=new_course.courseID,
                 courseStartDate=iteration.courseStartDate,
                 courseEndDate=iteration.courseEndDate,
                 courseLocation=iteration.courseLocation
             )
-            db.add(iteration)
+            db.add(new_iteration)
+            db.flush()  # get iterationID
+
+            # 🔥 Create sessions for this iteration
+            for session_date in iteration.sessions:
+                session = CourseSessions(
+                    courseID=new_course.courseID,
+                    iterationID=new_iteration.iterationID,
+                    sessionDate=session_date
+                )
+                db.add(session)
 
         db.commit()
         return {"message": "Course created successfully", "courseID": new_course.courseID}
