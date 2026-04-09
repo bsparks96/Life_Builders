@@ -7,9 +7,16 @@ import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.*;
 import javafx.fxml.FXML;
+import javafx.scene.control.DateCell;
+import javafx.scene.control.ToggleButton;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -18,6 +25,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import models.CourseDetailsResponse;
 import models.CourseEntryRequest;
+import services.ClientService;
 import services.CourseService;
 import models.InstructorOut;
 import models.IterationOut;
@@ -39,6 +47,17 @@ public class CourseManagementController {
     @FXML private VBox iterationsBox;
     @FXML private DatePicker iterationStartPicker;
     @FXML private DatePicker iterationEndPicker;
+    @FXML private DatePicker sessionCalendar;
+
+    @FXML private ToggleButton monBtn;
+    @FXML private ToggleButton tueBtn;
+    @FXML private ToggleButton wedBtn;
+    @FXML private ToggleButton thuBtn;
+    @FXML private ToggleButton friBtn;
+    @FXML private ToggleButton satBtn;
+    @FXML private ToggleButton sunBtn;
+
+    private Set<LocalDate> sessionDates = new HashSet<>();
 
 
     @FXML
@@ -70,6 +89,18 @@ public class CourseManagementController {
         instructorListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         instructorListView.getItems().addAll(utils.UserCache.getUserNames());
         instructorCombo.setItems(FXCollections.observableArrayList(utils.UserCache.getUserNames()));
+        
+        
+        monBtn.setOnAction(e -> generateSessionDates());
+        tueBtn.setOnAction(e -> generateSessionDates());
+        wedBtn.setOnAction(e -> generateSessionDates());
+        thuBtn.setOnAction(e -> generateSessionDates());
+        friBtn.setOnAction(e -> generateSessionDates());
+        satBtn.setOnAction(e -> generateSessionDates());
+        sunBtn.setOnAction(e -> generateSessionDates());
+
+        iterationStartPicker.setOnAction(e -> generateSessionDates());
+        iterationEndPicker.setOnAction(e -> generateSessionDates());
 
     }
 
@@ -153,7 +184,7 @@ public class CourseManagementController {
                 return;
             }
 
-            // Corrected: Get ALL instructors listed, not just selected
+            // Get instructors
             req.instructorIDs = new ArrayList<>();
             for (String instructorName : instructorListView.getItems()) {
                 Integer id = utils.UserCache.getUserID(instructorName);
@@ -170,14 +201,18 @@ public class CourseManagementController {
             for (Node node : iterationsBox.getChildren()) {
                 if (node instanceof HBox row) {
                     List<Node> inputs = row.getChildren();
+
                     if (inputs.size() >= 2 &&
                         inputs.get(0) instanceof DatePicker start &&
                         inputs.get(1) instanceof DatePicker end) {
 
                         CourseEntryRequest.IterationIn iter = new CourseEntryRequest.IterationIn();
+
                         iter.courseStartDate = start.getValue() != null ? start.getValue().toString() : null;
                         iter.courseEndDate = end.getValue() != null ? end.getValue().toString() : null;
-                        //iter.courseLocation = ""; // optional
+
+                        iter.sessions = getSessionDateStrings();
+
                         if (iter.courseStartDate != null && iter.courseEndDate != null) {
                             req.iterations.add(iter);
                         }
@@ -185,25 +220,39 @@ public class CourseManagementController {
                 }
             }
 
-            // Debug Output
             System.out.println("Request Body:");
             System.out.println("Course Name: " + req.courseName);
             System.out.println("Course Length: " + req.courseLength);
             System.out.println("Instructor IDs: " + req.instructorIDs);
             System.out.println("Iterations:");
+
             for (CourseEntryRequest.IterationIn iter : req.iterations) {
                 System.out.println("- Start: " + iter.courseStartDate + ", End: " + iter.courseEndDate);
+
+                // 🔥 NEW: print sessions
+                if (iter.sessions != null) {
+                    System.out.println("  Sessions:");
+                    for (String s : iter.sessions) {
+                        System.out.println("   - " + s);
+                    }
+                }
             }
 
-            // Submit to API
             boolean success = CourseService.submitCourseEntry(req);
+
             if (success) {
                 showAlert(Alert.AlertType.INFORMATION, "Course created successfully!");
+
                 courseDetailPane.setVisible(false);
                 courseDetailPane.setManaged(false);
+
+                sessionDates.clear();
+                refreshCourseCache();
+
             } else {
                 showAlert(Alert.AlertType.ERROR, "Failed to create course.");
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "An unexpected error occurred.");
@@ -292,6 +341,92 @@ public class CourseManagementController {
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("Error fetching course details for ID: " + courseID);
+        }
+    }
+    
+    private void generateSessionDates() {
+
+        sessionDates.clear();
+
+        LocalDate start = iterationStartPicker.getValue();
+        LocalDate end = iterationEndPicker.getValue();
+
+        if (start == null || end == null || end.isBefore(start)) return;
+
+        Set<DayOfWeek> selectedDays = new HashSet<>();
+
+        if (monBtn.isSelected()) selectedDays.add(DayOfWeek.MONDAY);
+        if (tueBtn.isSelected()) selectedDays.add(DayOfWeek.TUESDAY);
+        if (wedBtn.isSelected()) selectedDays.add(DayOfWeek.WEDNESDAY);
+        if (thuBtn.isSelected()) selectedDays.add(DayOfWeek.THURSDAY);
+        if (friBtn.isSelected()) selectedDays.add(DayOfWeek.FRIDAY);
+        if (satBtn.isSelected()) selectedDays.add(DayOfWeek.SATURDAY);
+        if (sunBtn.isSelected()) selectedDays.add(DayOfWeek.SUNDAY);
+
+        LocalDate current = start;
+
+        while (!current.isAfter(end)) {
+            if (selectedDays.contains(current.getDayOfWeek())) {
+                sessionDates.add(current);
+            }
+            current = current.plusDays(1);
+        }
+
+        updateCalendarHighlighting();
+    }
+    
+    private void updateCalendarHighlighting() {
+        sessionCalendar.setDayCellFactory(picker -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate date, boolean empty) {
+                super.updateItem(date, empty);
+
+                if (empty) return;
+
+                if (sessionDates.contains(date)) {
+                    setStyle("-fx-background-color: lightgreen;");
+                } else {
+                    setStyle("");
+                }
+
+                setOnMouseClicked(event -> {
+                    if (sessionDates.contains(date)) {
+                        sessionDates.remove(date);
+                    } else {
+                        sessionDates.add(date);
+                    }
+
+                    sessionCalendar.getEditor().setText(sessionCalendar.getEditor().getText());
+                });
+            }
+        });
+    }
+    
+    private List<String> getSessionDateStrings() {
+        List<LocalDate> sorted = new ArrayList<>(sessionDates);
+        sorted.sort(LocalDate::compareTo);
+
+        List<String> result = new ArrayList<>();
+        for (LocalDate d : sorted) {
+            result.add(d.toString()); 
+        }
+        return result;
+    }
+    
+    private void refreshCourseCache() {
+        try {
+            // Fetch updated course list
+            Map<String, Integer> courseMap = ClientService.fetchAllCourses();
+            CourseCache.setAvailableCourses(courseMap);
+
+            // 🔥 Force ListView refresh
+            courseListView.setItems(CourseCache.getCourseNames());
+
+            System.out.println("Course cache refreshed");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Failed to refresh course cache");
         }
     }
 }

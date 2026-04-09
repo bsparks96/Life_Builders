@@ -1,8 +1,11 @@
 package models;
 
+import java.util.List;
+
 public class IterationOut {
     private String startDate;
     private String endDate;
+    private List<String> sessions;
 
     public String getStartDate() {
         return startDate;
@@ -18,5 +21,13 @@ public class IterationOut {
 
     public void setEndDate(String endDate) {
         this.endDate = endDate;
+    }
+    
+    public List<String> getSessions() {
+        return sessions;
+    }
+
+    public void setSessions(List<String> sessions) {
+        this.sessions = sessions;
     }
 }

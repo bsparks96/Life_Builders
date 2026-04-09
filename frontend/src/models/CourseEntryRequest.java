@@ -11,5 +11,6 @@ public class CourseEntryRequest {
     public static class IterationIn {
         public String courseStartDate;
         public String courseEndDate;
+        public List<String> sessions;
     }
 }
