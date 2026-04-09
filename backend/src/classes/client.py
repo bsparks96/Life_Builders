@@ -47,3 +47,17 @@ class ClientDetailsResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ClientCourseEnroll(BaseModel):
+    clientID: int
+    courseID: int
+    iterationID: int
+
+class AttendanceUpdate(BaseModel):
+    sessionID: int
+    clientID: int
+    attendance: bool
+
+class AttendanceBulkUpdate(BaseModel):
+    updates: List[AttendanceUpdate]
+

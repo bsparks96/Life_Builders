@@ -62,8 +62,7 @@ public class CourseManagementController {
 
     @FXML
     public void initialize() {
-        // TODO: Fetch courses from backend and populate courseListView
-        // courseListView.getItems().addAll(courseService.fetchAllCourses());
+
     	
     	courseListView.setItems(CourseCache.getCourseNames());
     	
@@ -176,7 +175,6 @@ public class CourseManagementController {
             CourseEntryRequest req = new CourseEntryRequest();
             req.courseName = courseNameField.getText().trim();
 
-            // Parse course length
             try {
                 req.courseLength = Integer.parseInt(courseLengthField.getText().trim());
             } catch (NumberFormatException e) {
@@ -184,7 +182,6 @@ public class CourseManagementController {
                 return;
             }
 
-            // Get instructors
             req.instructorIDs = new ArrayList<>();
             for (String instructorName : instructorListView.getItems()) {
                 Integer id = utils.UserCache.getUserID(instructorName);
@@ -196,7 +193,6 @@ public class CourseManagementController {
                 }
             }
 
-            // Gather iterations
             req.iterations = new ArrayList<>();
             for (Node node : iterationsBox.getChildren()) {
                 if (node instanceof HBox row) {
@@ -229,7 +225,6 @@ public class CourseManagementController {
             for (CourseEntryRequest.IterationIn iter : req.iterations) {
                 System.out.println("- Start: " + iter.courseStartDate + ", End: " + iter.courseEndDate);
 
-                // 🔥 NEW: print sessions
                 if (iter.sessions != null) {
                     System.out.println("  Sessions:");
                     for (String s : iter.sessions) {
@@ -268,7 +263,6 @@ public class CourseManagementController {
 
     @FXML
     private void handleNewCourseClick(ActionEvent event) {
-        // Toggle visibility of form or clear fields as needed
 
     	System.out.println("New Course clicked");
         courseNameField.clear();
@@ -314,7 +308,7 @@ public class CourseManagementController {
             }
             detailBox.getChildren().add(new Label(instructorList.toString()));
 
-            // Iterations
+            // 
             StringBuilder iterationList = new StringBuilder("Current Iterations:\n");
             for (IterationOut iteration : details.getIterations()) {
                 iterationList.append("- ").append(iteration.getStartDate()).append(" to ").append(iteration.getEndDate()).append("\n");
@@ -415,11 +409,9 @@ public class CourseManagementController {
     
     private void refreshCourseCache() {
         try {
-            // Fetch updated course list
             Map<String, Integer> courseMap = ClientService.fetchAllCourses();
             CourseCache.setAvailableCourses(courseMap);
 
-            // 🔥 Force ListView refresh
             courseListView.setItems(CourseCache.getCourseNames());
 
             System.out.println("Course cache refreshed");
