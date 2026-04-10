@@ -6,6 +6,7 @@ public class IterationOut {
     private String startDate;
     private String endDate;
     private List<String> sessions;
+    private int iterationID;
 
     public String getStartDate() {
         return startDate;
@@ -29,5 +30,13 @@ public class IterationOut {
 
     public void setSessions(List<String> sessions) {
         this.sessions = sessions;
+    }
+    
+    public int getIterationID() {
+        return iterationID;
+    }
+
+    public void setIterationID(int iterationID) {
+        this.iterationID = iterationID;
     }
 }

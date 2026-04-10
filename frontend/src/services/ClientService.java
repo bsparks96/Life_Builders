@@ -77,7 +77,7 @@ public class ClientService {
             HttpClient client = HttpClient.newHttpClient();
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/details"))
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/details/"))
                     .header("Authorization", "Bearer " + SessionManager.getToken())
                     .GET()
                     .build();

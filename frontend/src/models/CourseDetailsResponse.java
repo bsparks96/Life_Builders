@@ -27,4 +27,6 @@ public class CourseDetailsResponse {
 	public Integer getCourseID() {
 		return courseID;
 	}
+	
+	
 }

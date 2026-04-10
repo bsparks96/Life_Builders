@@ -14,6 +14,7 @@ class InstructorOut(BaseModel):
     userID: int
 
 class IterationOut(BaseModel):
+    iterationID: int
     startDate: date
     endDate: date
     sessions: List[date] = []

@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,8 @@ public class CourseManagementController {
 
     @FXML private VBox courseDetailPane;
     @FXML private VBox iterationsBox;
+    private VBox attendanceSection;
+    private GridPane attendanceGrid;
     @FXML private DatePicker iterationStartPicker;
     @FXML private DatePicker iterationEndPicker;
     @FXML private DatePicker sessionCalendar;
@@ -58,6 +61,7 @@ public class CourseManagementController {
     @FXML private ToggleButton sunBtn;
 
     private Set<LocalDate> sessionDates = new HashSet<>();
+    private Map<String, Boolean> attendanceChanges = new HashMap<>();
 
 
     @FXML
@@ -308,12 +312,93 @@ public class CourseManagementController {
             }
             detailBox.getChildren().add(new Label(instructorList.toString()));
 
-            // 
+            /*
             StringBuilder iterationList = new StringBuilder("Current Iterations:\n");
             for (IterationOut iteration : details.getIterations()) {
                 iterationList.append("- ").append(iteration.getStartDate()).append(" to ").append(iteration.getEndDate()).append("\n");
             }
             detailBox.getChildren().add(new Label(iterationList.toString()));
+			*/
+            
+            detailBox.getChildren().add(new Label("Current Iterations:"));
+
+	         // 🔥 Container for iterations
+	        VBox iterationContainer = new VBox(5);
+	        
+	        attendanceSection = new VBox(10);
+	        attendanceSection.setVisible(false);
+	        attendanceSection.setManaged(false);
+
+	        // Grid
+	        attendanceGrid = new GridPane();
+	        attendanceGrid.setHgap(10);
+	        attendanceGrid.setVgap(5);
+
+	        // Buttons
+	        HBox buttonRow = new HBox(10);
+	        Button updateBtn = new Button("Update");
+	        updateBtn.setOnAction(e -> handleUpdateAttendance());
+	        Button addClientsBtn = new Button("Add Clients");
+
+	        buttonRow.getChildren().addAll(updateBtn, addClientsBtn);
+
+	        //attendanceSection.getChildren().addAll(attendanceGrid, buttonRow);
+	        ScrollPane scrollPane = new ScrollPane(attendanceGrid);
+	        scrollPane.setFitToHeight(true);
+	        scrollPane.setFitToWidth(false); // IMPORTANT → allows horizontal scroll
+
+	        HBox mainContainer = new HBox(10);
+
+		     // LEFT: Names column (fixed)
+		     VBox nameColumn = new VBox(5);
+		     nameColumn.setPrefWidth(150);
+	
+		     // RIGHT: Scrollable sessions grid
+		     attendanceGrid = new GridPane();
+		     attendanceGrid.setHgap(10);
+		     attendanceGrid.setVgap(5);
+	
+		     scrollPane = new ScrollPane(attendanceGrid);
+		     scrollPane.setFitToHeight(true);
+		     scrollPane.setFitToWidth(false);
+	
+		     // Add both sides
+		     mainContainer.getChildren().addAll(nameColumn, scrollPane);
+	
+		     // Add to section
+		     attendanceSection.getChildren().addAll(mainContainer, buttonRow);
+	
+	        for (IterationOut iteration : details.getIterations()) {
+	
+	            HBox iterationRow = new HBox(10);
+	
+	            Label iterationLabel = new Label(
+	                iteration.getStartDate() + " to " + iteration.getEndDate()
+	            );
+	
+	            Button viewClientsBtn = new Button("View Clients");
+	
+	            viewClientsBtn.setOnAction(e -> {
+	            	int iterationID = iteration.getIterationID();
+
+	                System.out.println("Loading grid for iteration: " + iterationID);
+
+	                // Show section
+	                attendanceSection.setVisible(true);
+	                attendanceSection.setManaged(true);
+
+	                // Load grid
+	                loadAttendanceGrid(attendanceGrid, iterationID);
+	            });
+	
+	            iterationRow.getChildren().addAll(iterationLabel, viewClientsBtn);
+	
+	            iterationContainer.getChildren().add(iterationRow);
+	        }
+	        detailBox.getChildren().add(iterationContainer);
+	        
+	        
+	        detailBox.getChildren().add(attendanceSection);
 
             // Placeholder for future clickable past iterations
             detailBox.getChildren().add(new Label("Past Iterations: (clickable items to view clients)"));
@@ -421,4 +506,122 @@ public class CourseManagementController {
             System.err.println("Failed to refresh course cache");
         }
     }
+    
+    private void loadAttendanceGrid(GridPane grid, int iterationID) {
+
+        grid.getChildren().clear();
+
+        var sessions = utils.CourseSessionCache.getSessions(iterationID);
+        var clients = utils.CourseSessionCache.getClients(iterationID);
+
+        if (sessions == null || clients == null) return;
+
+        // 🔹 Get nameColumn from parent
+        HBox mainContainer = (HBox) attendanceSection.getChildren().get(0);
+        VBox nameColumn = (VBox) mainContainer.getChildren().get(0);
+
+        nameColumn.getChildren().clear();
+
+        // 🔹 Header
+        nameColumn.getChildren().add(new Label("Name"));
+
+        for (int col = 0; col < sessions.size(); col++) {
+            grid.add(new Label(sessions.get(col).date), col, 0);
+        }
+
+        // 🔹 Rows
+        for (int row = 0; row < clients.size(); row++) {
+
+            var client = clients.get(row);
+
+            // LEFT SIDE (fixed names)
+            nameColumn.getChildren().add(new Label(client.name));
+
+            // RIGHT SIDE (sessions)
+            for (int col = 0; col < sessions.size(); col++) {
+
+                var session = sessions.get(col);
+
+                boolean attended = utils.CourseSessionCache.getAttendance(
+                        iterationID,
+                        client.clientID,
+                        session.sessionID
+                );
+
+                CheckBox cb = new CheckBox();
+                cb.setSelected(attended);
+                
+                int clientID = client.clientID;
+                int sessionID = session.sessionID;
+
+                // Track changes
+                cb.setOnAction(e -> {
+                   boolean newValue = cb.isSelected();
+
+                   // Update cache immediately
+                   utils.CourseSessionCache.updateAttendance(
+                           iterationID,
+                           clientID,
+                           sessionID,
+                           newValue
+                   );
+
+                   // Track change for API
+                   String key = iterationID + "-" + clientID + "-" + sessionID;
+                   attendanceChanges.put(key, newValue);
+                   
+                   
+                });
+
+                grid.add(cb, col, row + 1);
+            }
+        }
+    }
+
+    private void handleUpdateAttendance() {
+
+        if (attendanceChanges.isEmpty()) {
+            System.out.println("No changes to update.");
+            return;
+        }
+
+        List<Map<String, Object>> updates = new ArrayList<>();
+
+        for (Map.Entry<String, Boolean> entry : attendanceChanges.entrySet()) {
+
+            String[] parts = entry.getKey().split("-");
+
+            int iterationID = Integer.parseInt(parts[0]); // not needed for API but kept for clarity
+            int clientID = Integer.parseInt(parts[1]);
+            int sessionID = Integer.parseInt(parts[2]);
+
+            Map<String, Object> update = new HashMap<>();
+            update.put("sessionID", sessionID);
+            update.put("clientID", clientID);
+            update.put("attendance", entry.getValue());
+
+            updates.add(update);
+        }
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("updates", updates);
+
+        try {
+            boolean success = CourseService.submitAttendanceUpdates(requestBody);
+
+            if (success) {
+                System.out.println("Attendance updated successfully!");
+
+                // Clear changes after success
+                attendanceChanges.clear();
+
+            } else {
+                System.out.println("Failed to update attendance.");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

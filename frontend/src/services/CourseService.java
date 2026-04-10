@@ -3,6 +3,7 @@ package services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import models.CourseDetailsResponse;
 import models.CourseEntryRequest;
+import models.IterationAttendanceResponse;
 import utils.ApiConfig;
 import utils.SessionManager;
 
@@ -12,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Map;
 
 public class CourseService {
 
@@ -46,9 +48,9 @@ public class CourseService {
 
             HttpRequest request = HttpRequest.newBuilder()
             		.uri(URI.create(utils.ApiConfig.BASE_URL + "/api/courseCreate/"))
-            	    .version(HttpClient.Version.HTTP_1_1)  // ← CRUCIAL FIX
+            	    .version(HttpClient.Version.HTTP_1_1)  
             	    .header("Content-Type", "application/json")
-            	    .header("Accept", "application/json")  // optional but recommended
+            	    .header("Accept", "application/json")  
             	    .POST(HttpRequest.BodyPublishers.ofString(json))
             	    .build();
             System.out.println("Sending JSON: " + json);
@@ -90,4 +92,63 @@ public class CourseService {
             return null;
         }
     }
+    
+    public static IterationAttendanceResponse fetchIterationAttendance(int iterationID) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/attendance/iteration/" + iterationID))
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Failed to fetch iteration attendance: HTTP " + response.statusCode());
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            return mapper.readValue(response.body(), IterationAttendanceResponse.class);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public static boolean submitAttendanceUpdates(Map<String, Object> requestBody) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            ObjectMapper mapper = new ObjectMapper();
+
+            String json = mapper.writeValueAsString(requestBody);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/attendance/"))
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .header("Authorization", "Bearer " + SessionManager.getToken()) // 🔥 IMPORTANT
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            System.out.println("Sending Attendance JSON: " + json);
+            System.out.println("Request URI: " + request.uri());
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Response Status: " + response.statusCode());
+            System.out.println("Response Body: " + response.body());
+
+            return response.statusCode() == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
 }

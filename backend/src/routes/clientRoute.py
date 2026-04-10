@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models.models import Client, ClientIncarcerationPeriods, CourseHasClients, Course, CourseSessions, SessionAttendance
 from utils.database import get_db
-from classes.client import ClientSummary, ClientCreate, ClientDetailsResponse, ClientCourseEnroll, AttendanceBulkUpdate, AttendanceUpdate
+from classes.client import ClientSummary, ClientCreate, ClientDetailsResponse, ClientCourseEnroll, AttendanceBulkUpdate, AttendanceUpdate, IterationAttendanceResponse
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
@@ -209,3 +209,72 @@ def update_attendance(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/attendance/iteration/{iterationID}", response_model=IterationAttendanceResponse)
+def get_iteration_attendance(iterationID: int, db: Session = Depends(get_db)):
+    # 1. Get sessions
+    sessions = db.query(CourseSessions).filter(
+        CourseSessions.iterationID == iterationID
+    ).all()
+
+    session_list = [
+        {
+            "sessionID": s.sessionID,
+            "date": s.sessionDate
+        }
+        for s in sessions
+    ]
+
+    session_ids = [s.sessionID for s in sessions]
+
+    # 2. Get enrolled clients
+    enrollments = db.query(CourseHasClients).filter(
+        CourseHasClients.iterationID == iterationID
+    ).all()
+
+    client_ids = [e.clientID for e in enrollments]
+
+    clients = db.query(Client).filter(
+        Client.clientID.in_(client_ids)
+    ).all()
+
+    # 3. Get attendance records
+    attendance_records = db.query(SessionAttendance).filter(
+        SessionAttendance.sessionID.in_(session_ids),
+        SessionAttendance.clientID.in_(client_ids)
+    ).all()
+
+    # 4. Build lookup map (FAST access)
+    attendance_map = {}
+    for record in attendance_records:
+        attendance_map[(record.clientID, record.sessionID)] = record.attendance
+
+    # 5. Build client response
+    client_list = []
+
+    for client in clients:
+        client_attendance = []
+
+        for session in sessions:
+            attended = attendance_map.get(
+                (client.clientID, session.sessionID),
+                False
+            )
+
+            client_attendance.append({
+                "sessionID": session.sessionID,
+                "attended": bool(attended)
+            })
+
+        client_list.append({
+            "clientID": client.clientID,
+            "name": f"{client.clientFirstName} {client.clientLastName}",
+            "attendance": client_attendance
+        })
+
+    return {
+        "iterationID": iterationID,
+        "sessions": session_list,
+        "clients": client_list
+    }

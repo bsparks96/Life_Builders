@@ -61,3 +61,18 @@ class AttendanceUpdate(BaseModel):
 class AttendanceBulkUpdate(BaseModel):
     updates: List[AttendanceUpdate]
 
+class SessionInfo(BaseModel):
+    sessionID: int
+    date: date
+
+
+class ClientAttendance(BaseModel):
+    clientID: int
+    name: str
+    attendance: List[dict]
+
+
+class IterationAttendanceResponse(BaseModel):
+    iterationID: int
+    sessions: List[SessionInfo]
+    clients: List[ClientAttendance]

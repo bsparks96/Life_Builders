@@ -4,25 +4,21 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import models.CourseDetailsResponse;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class CourseCache {
 
-    // Key: courseID, Value: courseName
     public static Map<Integer, String> courseMap = new HashMap<>();
 
-    // For looking up ID by name (reverse lookup)
     private static final Map<String, Integer> courseNameToIdMap = new HashMap<>();
     
-    // NEW: store full course details
     private static final Map<Integer, CourseDetailsResponse> courseDetailsMap = new HashMap<>();
 
-    // List of all course names for UI dropdowns
     private static final ObservableList<String> courseNames = FXCollections.observableArrayList();
 
-    // Called after API fetch
     public static void setAvailableCourses(Map<String, Integer> nameToIdMap) {
         courseNameToIdMap.clear();
         courseNameToIdMap.putAll(nameToIdMap);
@@ -62,5 +58,9 @@ public class CourseCache {
 
     public static boolean isDetailsLoaded() {
         return !courseDetailsMap.isEmpty();
+    }
+    
+    public static List<CourseDetailsResponse> getAllCourseDetails() {
+        return new ArrayList<>(courseDetailsMap.values());
     }
 }

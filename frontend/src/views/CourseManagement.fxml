@@ -59,15 +59,7 @@
                 <TextField fx:id="courseLengthField" maxWidth="100"/>
 
                 <Label text="Iterations (optional):" />
-                <!--
-                <VBox fx:id="iterationsBox" spacing="5">
-                    <HBox spacing="10">
-                        <DatePicker fx:id="iterationStartPicker" promptText="Start Date" maxWidth="150"/>
-                        <DatePicker fx:id="iterationEndPicker" promptText="End Date" maxWidth="150"/>
-                        <Button text="Add Iteration" onAction="#handleAddIteration"/>
-                    </HBox>
-                </VBox>
-				-->
+                
 				<VBox fx:id="iterationsBox" spacing="10">
 				    <!-- Existing -->
 				    <HBox spacing="10">

@@ -44,6 +44,7 @@ def build_course_details(courseID: int, db: Session):
 
         iteration_list.append(
             IterationOut(
+                iterationID=it.iterationID,
                 startDate=it.courseStartDate,
                 endDate=it.courseEndDate,
                 sessions=session_dates
