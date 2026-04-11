@@ -36,4 +36,8 @@ public class ClientDetailsCache {
     public static void clear() {
         clientDetailsMap.clear();
     }
+    
+    public static Map<Integer, ClientDetailsResponse> getAllClients() {
+        return clientDetailsMap;
+    }
 }

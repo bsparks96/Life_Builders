@@ -1,7 +1,9 @@
 package controllers;
 
 import javafx.fxml.FXML;
+import utils.ClientDetailsCache;
 import utils.CourseCache;
+import utils.CourseSessionCache;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
@@ -20,15 +22,26 @@ import java.util.List;
 import java.util.Map;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.TextField;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import models.ClientDetailsResponse;
 import models.CourseDetailsResponse;
 import models.CourseEntryRequest;
 import services.ClientService;
 import services.CourseService;
 import models.InstructorOut;
+import models.IterationAttendanceResponse;
 import models.IterationOut;
 
 
@@ -63,6 +76,8 @@ public class CourseManagementController {
     private Set<LocalDate> sessionDates = new HashSet<>();
     private Map<String, Boolean> attendanceChanges = new HashMap<>();
 
+    private GridPane headerGridRef;
+    private VBox nameColumnRef;
 
     @FXML
     public void initialize() {
@@ -116,23 +131,7 @@ public class CourseManagementController {
     private void sortMostRecent() {
         // TODO: Sort the list by recent dates
     }
-/*
-    @FXML
-    private void handleNewCourse() {
-        detailsPane.getChildren().clear();
-        VBox form = new VBox(10);
-        form.getChildren().addAll(
-            new Label("Course Name:"),
-            new TextField(),
-            new Label("Instructors:"),
-            new TextField(),
-            new Button("Save")
-        );
-        detailsPane.getChildren().add(form);
-        instructorListView.getSelectionModel().clearSelection();
 
-    }
-*/  
     @FXML
     private void handleAddIteration(ActionEvent event) {
         HBox iterationRow = new HBox(10);
@@ -322,7 +321,6 @@ public class CourseManagementController {
             
             detailBox.getChildren().add(new Label("Current Iterations:"));
 
-	         // 🔥 Container for iterations
 	        VBox iterationContainer = new VBox(5);
 	        
 	        attendanceSection = new VBox(10);
@@ -338,76 +336,107 @@ public class CourseManagementController {
 	        HBox buttonRow = new HBox(10);
 	        Button updateBtn = new Button("Update");
 	        updateBtn.setOnAction(e -> handleUpdateAttendance());
-	        Button addClientsBtn = new Button("Add Clients");
-
-	        buttonRow.getChildren().addAll(updateBtn, addClientsBtn);
-
-	        //attendanceSection.getChildren().addAll(attendanceGrid, buttonRow);
-	        ScrollPane scrollPane = new ScrollPane(attendanceGrid);
-	        scrollPane.setFitToHeight(true);
-	        scrollPane.setFitToWidth(false); // IMPORTANT → allows horizontal scroll
-
-	        HBox mainContainer = new HBox(10);
-
-		     // LEFT: Names column (fixed)
-		     VBox nameColumn = new VBox(5);
-		     nameColumn.setPrefWidth(150);
-	
-		     // RIGHT: Scrollable sessions grid
-		     attendanceGrid = new GridPane();
-		     attendanceGrid.setHgap(10);
-		     attendanceGrid.setVgap(5);
-	
-		     scrollPane = new ScrollPane(attendanceGrid);
-		     scrollPane.setFitToHeight(true);
-		     scrollPane.setFitToWidth(false);
-	
-		     // Add both sides
-		     mainContainer.getChildren().addAll(nameColumn, scrollPane);
-	
-		     // Add to section
-		     attendanceSection.getChildren().addAll(mainContainer, buttonRow);
-	
+	        
 	        for (IterationOut iteration : details.getIterations()) {
-	
+
+	            int iterationID = iteration.getIterationID(); // ✅ NOW IN SCOPE
+
 	            HBox iterationRow = new HBox(10);
-	
+
 	            Label iterationLabel = new Label(
 	                iteration.getStartDate() + " to " + iteration.getEndDate()
 	            );
-	
+
 	            Button viewClientsBtn = new Button("View Clients");
-	
+	            
+
 	            viewClientsBtn.setOnAction(e -> {
-	            	int iterationID = iteration.getIterationID();
 
 	                System.out.println("Loading grid for iteration: " + iterationID);
 
-	                // Show section
 	                attendanceSection.setVisible(true);
 	                attendanceSection.setManaged(true);
 
-	                // Load grid
 	                loadAttendanceGrid(attendanceGrid, iterationID);
 	            });
-	
-	            iterationRow.getChildren().addAll(iterationLabel, viewClientsBtn);
-	
+
+	            // ✅ ADD CLIENTS BUTTON HERE
+	            Button addClientsBtn = new Button("Add Clients");
+	            buttonRow.getChildren().addAll(updateBtn, addClientsBtn);
+	            addClientsBtn.setOnAction(e -> {
+	                openAddClientsDialog(iterationID, courseID);
+	            });
+
+	            iterationRow.getChildren().addAll(iterationLabel, viewClientsBtn, addClientsBtn);
+
 	            iterationContainer.getChildren().add(iterationRow);
-	        }
+	        } 
+
+	        headerGridRef = new GridPane();
+	        GridPane headerGrid = headerGridRef;
+	        headerGrid.setHgap(10);
+
+	        ScrollPane headerScroll = new ScrollPane(headerGrid);
+	        headerScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+	        headerScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+	        headerScroll.setFitToHeight(true);
+	        headerScroll.setFitToWidth(false);
+	        
+	        headerScroll.setPadding(Insets.EMPTY);
+	        headerScroll.setStyle("-fx-padding: 0;");
+
+	        HBox mainContainer = new HBox(5);
+
+	        nameColumnRef = new VBox();
+	        VBox nameColumn = nameColumnRef;
+	        nameColumn.setMinWidth(Region.USE_PREF_SIZE);
+	        nameColumn.setPrefWidth(Region.USE_COMPUTED_SIZE);
+	        nameColumn.setMaxWidth(Region.USE_PREF_SIZE);
+	        nameColumn.setSpacing(5);
+	        nameColumn.setStyle("-fx-padding: 0 5 0 0;");
+
+	        attendanceGrid = new GridPane();
+	        attendanceGrid.setHgap(10);
+	        attendanceGrid.setVgap(8);
+
+	        ScrollPane gridScroll = new ScrollPane(attendanceGrid);
+	        gridScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+	        gridScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+	        gridScroll.prefViewportWidthProperty().bind(
+	        	    detailsPane.widthProperty().subtract(100) // 200 name column + padding
+	        	);
+	        headerScroll.prefViewportWidthProperty().bind(
+	        	    gridScroll.prefViewportWidthProperty()
+	        	);
+
+	        gridScroll.setFitToHeight(true);
+	        gridScroll.setFitToWidth(false);
+	        gridScroll.setPadding(Insets.EMPTY);
+	        gridScroll.setStyle("-fx-padding: 0;");
+
+	        headerScroll.hvalueProperty().bindBidirectional(gridScroll.hvalueProperty());
+
+	        mainContainer.getChildren().addAll(nameColumn, gridScroll);
+
+	        HBox headerContainer = new HBox(2);
+
+		     // empty spacer for name column alignment
+		    Region spacer = new Region();
+		    spacer.prefWidthProperty().bind(nameColumn.widthProperty());
+	
+		    headerContainer.getChildren().addAll(spacer, headerScroll);
+	
+		    attendanceSection.getChildren().addAll(headerContainer, mainContainer, buttonRow);
+		     
 	        detailBox.getChildren().add(iterationContainer);
 	        
 	        
 	        detailBox.getChildren().add(attendanceSection);
 
-            // Placeholder for future clickable past iterations
-            detailBox.getChildren().add(new Label("Past Iterations: (clickable items to view clients)"));
+            detailBox.getChildren().add(new Label("Past Iterations: "));
 
-            /*
-            detailsPane.getChildren().clear();
-            detailsPane.getChildren().add(detailBox);
-            */
-            
+
+
             courseDetailPane.setVisible(false);
             courseDetailPane.setManaged(false);
 
@@ -510,34 +539,54 @@ public class CourseManagementController {
     private void loadAttendanceGrid(GridPane grid, int iterationID) {
 
         grid.getChildren().clear();
+        grid.getColumnConstraints().clear();
+        grid.getRowConstraints().clear();
 
         var sessions = utils.CourseSessionCache.getSessions(iterationID);
         var clients = utils.CourseSessionCache.getClients(iterationID);
 
         if (sessions == null || clients == null) return;
 
-        // 🔹 Get nameColumn from parent
-        HBox mainContainer = (HBox) attendanceSection.getChildren().get(0);
-        VBox nameColumn = (VBox) mainContainer.getChildren().get(0);
+        GridPane headerGrid = headerGridRef;
+        VBox nameColumn = nameColumnRef;
 
         nameColumn.getChildren().clear();
 
-        // 🔹 Header
-        nameColumn.getChildren().add(new Label("Name"));
+        ColumnConstraints sessionCol = new ColumnConstraints();
+        sessionCol.setPrefWidth(80);
+        sessionCol.setMinWidth(60);
 
-        for (int col = 0; col < sessions.size(); col++) {
-            grid.add(new Label(sessions.get(col).date), col, 0);
+        headerGrid.getChildren().clear();
+        headerGrid.getColumnConstraints().clear();
+        grid.getColumnConstraints().clear(); 
+
+        for (int i = 0; i < sessions.size(); i++) {
+
+            ColumnConstraints gridCol = new ColumnConstraints();
+            gridCol.setPrefWidth(80);
+            gridCol.setMinWidth(60);
+            grid.getColumnConstraints().add(gridCol);
+
+            ColumnConstraints headerCol = new ColumnConstraints();
+            headerCol.setPrefWidth(80);
+            headerCol.setMinWidth(60);
+            headerGrid.getColumnConstraints().add(headerCol);
         }
 
-        // 🔹 Rows
+        for (int col = 0; col < sessions.size(); col++) {
+            Label dateLabel = new Label(sessions.get(col).date);
+            dateLabel.setStyle("-fx-font-weight: bold;");
+            headerGrid.add(dateLabel, col, 0);
+        }
+
         for (int row = 0; row < clients.size(); row++) {
 
             var client = clients.get(row);
 
-            // LEFT SIDE (fixed names)
-            nameColumn.getChildren().add(new Label(client.name));
+            Label nameLabel = new Label(client.name);
+            nameLabel.setMinWidth(Region.USE_PREF_SIZE);
+            nameColumn.getChildren().add(nameLabel);
 
-            // RIGHT SIDE (sessions)
             for (int col = 0; col < sessions.size(); col++) {
 
                 var session = sessions.get(col);
@@ -550,32 +599,38 @@ public class CourseManagementController {
 
                 CheckBox cb = new CheckBox();
                 cb.setSelected(attended);
-                
+
                 int clientID = client.clientID;
                 int sessionID = session.sessionID;
 
-                // Track changes
                 cb.setOnAction(e -> {
-                   boolean newValue = cb.isSelected();
 
-                   // Update cache immediately
-                   utils.CourseSessionCache.updateAttendance(
-                           iterationID,
-                           clientID,
-                           sessionID,
-                           newValue
-                   );
+                    boolean newValue = cb.isSelected();
 
-                   // Track change for API
-                   String key = iterationID + "-" + clientID + "-" + sessionID;
-                   attendanceChanges.put(key, newValue);
-                   
-                   
+                    utils.CourseSessionCache.updateAttendance(
+                            iterationID,
+                            clientID,
+                            sessionID,
+                            newValue
+                    );
+
+                    String key = iterationID + "-" + clientID + "-" + sessionID;
+                    attendanceChanges.put(key, newValue);
                 });
 
                 grid.add(cb, col, row + 1);
             }
         }
+        
+        grid.setAlignment(Pos.CENTER_LEFT);
+
+        // =========================
+        // 🔷 SPACING / STYLE
+        // =========================
+
+        grid.setHgap(10);
+        nameColumn.setSpacing(8);
+        grid.setVgap(8);
     }
 
     private void handleUpdateAttendance() {
@@ -624,4 +679,100 @@ public class CourseManagementController {
         }
     }
 
+    private void openAddClientsDialog(int iterationID, int courseID) {
+
+        Stage stage = new Stage();
+        stage.setTitle("Add Clients");
+
+        VBox root = new VBox(10);
+        root.setPrefSize(350, 450);
+
+        // 🔷 ListView now holds full objects
+        ListView<ClientDetailsResponse> clientList = new ListView<>();
+
+        // 🔷 Get already enrolled clients for this iteration
+        List<CourseSessionCache.ClientAttendance> enrolledClients =
+                CourseSessionCache.getClients(iterationID);
+
+        Set<Integer> enrolledClientIDs = new HashSet<>();
+        for (CourseSessionCache.ClientAttendance c : enrolledClients) {
+            enrolledClientIDs.add(c.clientID);
+        }
+
+        // 🔷 Build selectable client list (exclude already enrolled)
+        ObservableList<ClientDetailsResponse> clients = FXCollections.observableArrayList();
+        Map<ClientDetailsResponse, BooleanProperty> selectionMap = new HashMap<>();
+
+        for (ClientDetailsResponse client : ClientDetailsCache.getAllClients().values()) {
+
+            // ❌ Skip already enrolled clients
+            if (enrolledClientIDs.contains(client.getClientID())) continue;
+
+            clients.add(client);
+            selectionMap.put(client, new SimpleBooleanProperty(false));
+        }
+
+        clientList.setItems(clients);
+
+        // 🔷 Checkbox UI
+        clientList.setCellFactory(listView -> new CheckBoxListCell<ClientDetailsResponse>(client -> selectionMap.get(client)) {
+            @Override
+            public void updateItem(ClientDetailsResponse item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (item != null && !empty) {
+                    setText(item.getFullName());
+                } else {
+                    setText(null);
+                }
+            }
+        });
+
+        // 🔷 Enroll button
+        Button enrollBtn = new Button("Enroll Selected");
+
+        enrollBtn.setOnAction(e -> {
+
+            for (Map.Entry<ClientDetailsResponse, BooleanProperty> entry : selectionMap.entrySet()) {
+
+                if (entry.getValue().get()) {
+
+                    ClientDetailsResponse client = entry.getKey();
+
+                    boolean success = ClientService.enrollClient(
+                            client.getClientID(),
+                            courseID,
+                            iterationID
+                    );
+
+                    if (!success) {
+                        System.out.println("Failed to enroll: " + client.getFullName());
+                    }
+                }
+            }
+
+            // 🔷 Refresh attendance after enrollment
+            IterationAttendanceResponse response =
+                    CourseService.fetchIterationAttendance(iterationID);
+
+            if (response != null) {
+                CourseSessionCache.setFromResponse(response);
+                loadAttendanceGrid(attendanceGrid, iterationID);
+            }
+
+            stage.close();
+        });
+
+        // 🔷 Optional UX: message if no clients available
+        if (clients.isEmpty()) {
+            root.getChildren().add(new Label("All clients are already enrolled."));
+        }
+
+        root.getChildren().addAll(clientList, enrollBtn);
+
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
+    
 }

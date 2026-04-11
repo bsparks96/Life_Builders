@@ -34,27 +34,39 @@ public class ClientViewController {
 
     @FXML
     public void initialize() {
-        try {
-        	List<Client> clients = services.ClientService.fetchAllClients();
-        	for (Client c : clients) {
-        	    String fullName = c.getFullName();
 
-        	    clientList.getItems().add(fullName);
-        	    clientNameToID.put(fullName, c.getClientID());
-        	}
-        } catch (Exception e) {
-            e.printStackTrace();
+        // 🔷 Load from cache instead of API
+        Map<Integer, ClientDetailsResponse> clients = ClientDetailsCache.getAllClients();
+
+        if (clients == null || clients.isEmpty()) {
+            System.out.println("Client cache is empty (data may still be loading)");
+            return;
         }
 
+        // Populate list
+        for (ClientDetailsResponse c : clients.values()) {
+            String fullName = c.getFullName();
+
+            clientList.getItems().add(fullName);
+            clientNameToID.put(fullName, c.getClientID());
+        }
+
+        // 🔷 Selection listener
         clientList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-        	Integer clientID = clientNameToID.get(newVal);
-        	if (clientID != null) {
-        	    loadClientInfo(clientID);
-        	}
+            Integer clientID = clientNameToID.get(newVal);
+            if (clientID != null) {
+                loadClientInfo(clientID);
+            }
         });
 
-        sortAlphaButton.setOnAction(e -> clientList.getItems().sort(String::compareToIgnoreCase));
-        sortRecentButton.setOnAction(e -> FXCollections.reverse(clientList.getItems()));
+        // 🔷 Sorting
+        sortAlphaButton.setOnAction(e ->
+                clientList.getItems().sort(String::compareToIgnoreCase)
+        );
+
+        sortRecentButton.setOnAction(e ->
+                FXCollections.reverse(clientList.getItems())
+        );
     }
 
 
@@ -100,4 +112,6 @@ public class ClientViewController {
             );
         }
     }
+    
+    
 }

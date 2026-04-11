@@ -140,7 +140,7 @@ public class CourseService {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Response Status: " + response.statusCode());
+            System.out.println("Response Status: " + response.statusCode()); 
             System.out.println("Response Body: " + response.body());
 
             return response.statusCode() == 200;

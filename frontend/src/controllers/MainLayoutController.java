@@ -140,49 +140,6 @@ public class MainLayoutController {
         }).start();
     }
     
-    /*
-    private void debugSpecificAttendance(int iterationID) {
-        try {
-            List<CourseSessionCache.ClientAttendance> clients =
-                    CourseSessionCache.getClients(iterationID);
-
-            List<CourseSessionCache.SessionInfo> sessions =
-                    CourseSessionCache.getSessions(iterationID);
-
-            if (clients == null || sessions == null) return;
-
-            for (CourseSessionCache.ClientAttendance client : clients) {
-
-                // 🔥 TARGET CLIENT
-                if (client.clientID != 20000) continue;
-
-                for (CourseSessionCache.SessionInfo session : sessions) {
-
-                    // 🔥 TARGET SESSION
-                    if (session.sessionID == 31) {
-
-                        boolean attended = CourseSessionCache.getAttendance(
-                                iterationID,
-                                client.clientID,
-                                session.sessionID
-                        );
-
-                        System.out.println("🔥 MATCH FOUND 🔥");
-                        System.out.println("IterationID: " + iterationID);
-                        System.out.println("ClientID: " + client.clientID);
-                        System.out.println("Client Name: " + client.name);
-                        System.out.println("SessionID: " + session.sessionID);
-                        System.out.println("Date: " + session.date);
-                        System.out.println("Attended: " + attended);
-                        System.out.println("---------------------------");
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("DEBUG ERROR: " + e.getMessage());
-        }
-    }
-    */
+    
     
 }

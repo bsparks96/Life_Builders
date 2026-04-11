@@ -151,4 +151,42 @@ public class ClientService {
         }
     }
     
+    
+    public static boolean enrollClient(int clientID, int courseID, int iterationID) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            ObjectMapper mapper = new ObjectMapper();
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("clientID", clientID);
+            body.put("courseID", courseID);
+            body.put("iterationID", iterationID);
+
+            String json = mapper.writeValueAsString(body);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/enroll/"))
+                    .version(HttpClient.Version.HTTP_1_1)   // ✅ ADD THIS
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")   // ✅ ADD THIS
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            System.out.println("Sending Enroll JSON: " + json);
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Enroll Status: " + response.statusCode());
+            System.out.println("Enroll Response: " + response.body());
+
+            return response.statusCode() == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
 }
