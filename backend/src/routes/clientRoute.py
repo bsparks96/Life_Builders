@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models.models import Client, ClientIncarcerationPeriods, CourseHasClients, Course, CourseSessions, SessionAttendance
+from models.models import Client, ClientIncarcerationPeriods, CourseHasClients, Course, CourseSessions, SessionAttendance, CourseIterations
 from utils.database import get_db
-from classes.client import ClientSummary, ClientCreate, ClientDetailsResponse, ClientCourseEnroll, AttendanceBulkUpdate, AttendanceUpdate, IterationAttendanceResponse
+from classes.client import ClientSummary, ClientCreate, ClientDetailsResponse, ClientCourseEnroll, AttendanceBulkUpdate, AttendanceUpdate, IterationAttendanceResponse, CompletionBulkUpdate
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
@@ -88,10 +88,14 @@ def build_client_details(clientID: int, db: Session):
                 "completionDate": link.completionDate
             })
         else:
+            iteration = db.query(CourseIterations).filter(
+                CourseIterations.iterationID == link.iterationID
+            ).first()
+
             current_course = {
                 "courseName": course.courseName,
-                "startDate": link.startDate,
-                "endDate": link.endDate
+                "startDate": iteration.courseStartDate if iteration else None,
+                "endDate": iteration.courseEndDate if iteration else None
             }
 
     return ClientDetailsResponse(
@@ -133,48 +137,55 @@ def enroll_client_in_course(
     db: Session = Depends(get_db)
 ):
     try:
-        # 1. Check if already enrolled
-        existing = db.query(CourseHasClients).filter(
+        # 1. Check if CourseHasClients record exists
+        enrollment = db.query(CourseHasClients).filter(
             CourseHasClients.clientID == request.clientID,
             CourseHasClients.iterationID == request.iterationID
         ).first()
 
-        if existing:
-            raise HTTPException(status_code=400, detail="Client already enrolled in this iteration")
-
-        # 2. Create CourseHasClients record
-        enrollment = CourseHasClients(
-            clientID=request.clientID,
-            courseID=request.courseID,
-            iterationID=request.iterationID
-        )
-        db.add(enrollment)
+        # 2. Create if NOT exists
+        if not enrollment:
+            enrollment = CourseHasClients(
+                clientID=request.clientID,
+                courseID=request.courseID,
+                iterationID=request.iterationID
+            )
+            db.add(enrollment)
 
         # 3. Get all sessions for this iteration
         sessions = db.query(CourseSessions).filter(
             CourseSessions.iterationID == request.iterationID
         ).all()
 
-        # 4. Create attendance records
+        created_count = 0
+
+        # 4. Create attendance records (ONLY if missing)
         for session in sessions:
-            attendance = SessionAttendance(
-                sessionID=session.sessionID,
-                clientID=request.clientID,
-                attendance=0
-            )
-            db.add(attendance)
+
+            existing_attendance = db.query(SessionAttendance).filter(
+                SessionAttendance.sessionID == session.sessionID,
+                SessionAttendance.clientID == request.clientID
+            ).first()
+
+            if not existing_attendance:
+                attendance = SessionAttendance(
+                    sessionID=session.sessionID,
+                    clientID=request.clientID,
+                    attendance=0
+                )
+                db.add(attendance)
+                created_count += 1
 
         db.commit()
 
         return {
-            "message": "Client enrolled successfully",
-            "sessions_created": len(sessions)
+            "message": "Client enrollment ensured",
+            "sessions_created": created_count
         }
 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.put("/attendance/")
 def update_attendance(
@@ -278,3 +289,46 @@ def get_iteration_attendance(iterationID: int, db: Session = Depends(get_db)):
         "sessions": session_list,
         "clients": client_list
     }
+
+
+@router.put("/completion/")
+def update_completion_dates(
+    request: CompletionBulkUpdate,
+    db: Session = Depends(get_db)
+):
+    try:
+        updated_count = 0
+
+        for record in request.updates:
+
+            enrollment = db.query(CourseHasClients).filter(
+                CourseHasClients.clientID == record.clientID,
+                CourseHasClients.iterationID == record.iterationID
+            ).first()
+
+            if not enrollment:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Enrollment not found for client {record.clientID}, iteration {record.iterationID}"
+                )
+
+            # Optional safety check (courseID match)
+            if enrollment.courseID != record.courseID:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Course mismatch for client {record.clientID}"
+                )
+
+            enrollment.completionDate = record.completionDate
+            updated_count += 1
+
+        db.commit()
+
+        return {
+            "message": "Completion dates updated successfully",
+            "records_updated": updated_count
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

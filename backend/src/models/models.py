@@ -67,8 +67,8 @@ class CourseHasClients(Base):
     clientID = Column(Integer, ForeignKey("Clients.clientID"), primary_key=True)
     courseID = Column(Integer, ForeignKey("Courses.courseID"), primary_key=True)
     iterationID = Column(Integer, ForeignKey("CourseIterations.iterationID"), nullable=True)
-    startDate = Column(Date, nullable=True)
-    endDate = Column(Date, nullable=True)
+    # startDate = Column(Date, nullable=True)
+    # endDate = Column(Date, nullable=True)
     completionDate = Column(Date, nullable=True)  # now explicitly nullable
 
     client = relationship("Client", back_populates="completed_courses")

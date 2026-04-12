@@ -23,12 +23,12 @@ public class LoginController {
     @FXML
     private PasswordField passwordField;
 
+    /*
     @FXML
     private void handleLogin(ActionEvent event) {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-     // Basic validation
         if (username == null || username.isBlank() ||
             password == null || password.isBlank()) {
 
@@ -36,7 +36,6 @@ public class LoginController {
             return;
         }
 
-        // Attempt login
         boolean loginSuccess = AuthService.login(username, password);
 
         if (!loginSuccess) {
@@ -44,7 +43,6 @@ public class LoginController {
             return;
         }
 
-        // Fetch user details
         boolean userLoaded = AuthService.fetchCurrentUser();
 
         if (!userLoaded) {
@@ -52,8 +50,72 @@ public class LoginController {
             return;
         }
 
-        // Navigate to Home
         HeaderController.pushScene("Home.fxml");
+    }
+    */
+    
+    @FXML
+    private void handleLogin(ActionEvent event) {
+
+        String username = usernameField.getText();
+        String password = passwordField.getText();
+
+        if (username == null || username.isBlank() ||
+            password == null || password.isBlank()) {
+
+            showAlert("Login Error", "Username and password cannot be empty.");
+            return;
+        }
+
+        // 🔷 Disable UI while attempting login
+        usernameField.setDisable(true);
+        passwordField.setDisable(true);
+
+        new Thread(() -> {
+
+            boolean loginSuccess = false;
+
+            try {
+                // 🔷 First attempt
+                loginSuccess = AuthService.login(username, password);
+
+                // 🔷 Retry once if failed
+                if (!loginSuccess) {
+                    System.out.println("Login failed, retrying...");
+
+                    Thread.sleep(1500); // wait for backend to stabilize
+
+                    loginSuccess = AuthService.login(username, password);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            boolean finalLoginSuccess = loginSuccess;
+
+            // 🔷 Switch back to UI thread
+            javafx.application.Platform.runLater(() -> {
+
+                usernameField.setDisable(false);
+                passwordField.setDisable(false);
+
+                if (!finalLoginSuccess) {
+                    showAlert("Login Failed", "Unable to connect or invalid credentials.");
+                    return;
+                }
+
+                boolean userLoaded = AuthService.fetchCurrentUser();
+
+                if (!userLoaded) {
+                    showAlert("Session Error", "Failed to retrieve user session.");
+                    return;
+                }
+
+                HeaderController.pushScene("Home.fxml");
+            });
+
+        }).start();
     }
 
     @FXML
@@ -69,41 +131,3 @@ public class LoginController {
         alert.showAndWait();
     }
 }
-        
-        
-        
-        
-        
-        /*
-        
-        try {
-            // Load Home.fxml
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/Home.fxml"));
-            Parent root = loader.load();
-
-            // Get the current stage from the button event
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            // Optional: Capture current width and height
-            double width = stage.getWidth();
-            double height = stage.getHeight();
-
-            
-            HeaderController.pushScene("Home.fxml");
-            // Set the new scene
-            //Scene scene = new Scene(root, width, height);  // Set to current size
-            //stage.setScene(scene);
-            //stage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @FXML
-    private void handleReset() {
-        usernameField.clear();
-        passwordField.clear();
-    }
-}
-
-        */

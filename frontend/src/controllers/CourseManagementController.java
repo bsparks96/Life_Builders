@@ -27,6 +27,8 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.TextField;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.control.DatePicker;
+import java.time.LocalDate;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.Scene;
@@ -36,6 +38,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import models.ClientDetailsResponse;
+import models.CompletionUpdateRequest;
 import models.CourseDetailsResponse;
 import models.CourseEntryRequest;
 import services.ClientService;
@@ -75,6 +78,7 @@ public class CourseManagementController {
 
     private Set<LocalDate> sessionDates = new HashSet<>();
     private Map<String, Boolean> attendanceChanges = new HashMap<>();
+    private Map<Integer, Boolean> completionChanges = new HashMap<>();
 
     private GridPane headerGridRef;
     private VBox nameColumnRef;
@@ -360,16 +364,24 @@ public class CourseManagementController {
 	                loadAttendanceGrid(attendanceGrid, iterationID);
 	            });
 
-	            // ✅ ADD CLIENTS BUTTON HERE
+	            
 	            Button addClientsBtn = new Button("Add Clients");
 	            buttonRow.getChildren().addAll(updateBtn, addClientsBtn);
 	            addClientsBtn.setOnAction(e -> {
 	                openAddClientsDialog(iterationID, courseID);
 	            });
+	            
+	            Button completionBtn = new Button("Completion");
 
-	            iterationRow.getChildren().addAll(iterationLabel, viewClientsBtn, addClientsBtn);
+	            completionBtn.setOnAction(e -> {
+	                openCompletionDialog(iterationID, courseID);
+	            });
+
+	            iterationRow.getChildren().addAll(iterationLabel, viewClientsBtn, addClientsBtn, completionBtn);
 
 	            iterationContainer.getChildren().add(iterationRow);
+	            
+	            
 	        } 
 
 	        headerGridRef = new GridPane();
@@ -775,4 +787,106 @@ public class CourseManagementController {
         stage.show();
     }
     
+    
+    private void openCompletionDialog(int iterationID, int courseID) {
+
+        Stage stage = new Stage();
+        stage.setTitle("Mark Completion");
+
+        VBox root = new VBox(10);
+        root.setPrefSize(350, 450);
+
+
+
+        Label dateLabel = new Label("Completion Date:");
+        DatePicker datePicker = new DatePicker();
+
+        VBox dateBox = new VBox(5, dateLabel, datePicker);
+
+
+        var clients = utils.CourseSessionCache.getClients(iterationID);
+
+        if (clients == null || clients.isEmpty()) {
+            root.getChildren().add(new Label("No clients enrolled."));
+        } else {
+
+            VBox listContainer = new VBox(8);
+
+            // Reset tracking for this dialog
+            completionChanges.clear();
+
+            for (var client : clients) {
+
+                HBox row = new HBox(10);
+
+                Label nameLabel = new Label(client.name);
+                nameLabel.setMinWidth(200);
+
+                CheckBox completeBox = new CheckBox("Completed");
+
+                int clientID = client.clientID;
+
+                completeBox.setOnAction(e -> {
+                    completionChanges.put(clientID, completeBox.isSelected());
+                });
+
+                row.getChildren().addAll(nameLabel, completeBox);
+                listContainer.getChildren().add(row);
+            }
+
+            ScrollPane scrollPane = new ScrollPane(listContainer);
+            scrollPane.setFitToWidth(true);
+
+
+            Button updateBtn = new Button("Update");
+
+            updateBtn.setOnAction(e -> {
+
+                LocalDate selectedDate = datePicker.getValue();
+
+                if (selectedDate == null) {
+                    showAlert(Alert.AlertType.ERROR, "Please select a completion date.");
+                    return;
+                }
+
+                List<CompletionUpdateRequest.CompletionRecord> updates = new ArrayList<>();
+
+                completionChanges.forEach((clientID, completed) -> {
+
+                    CompletionUpdateRequest.CompletionRecord record =
+                            new CompletionUpdateRequest.CompletionRecord();
+
+                    record.clientID = clientID;
+                    record.courseID = courseID;       // 👈 make sure this is passed into dialog
+                    record.iterationID = iterationID;
+
+                    if (completed) {
+                        record.completionDate = selectedDate.toString(); // "YYYY-MM-DD"
+                    } else {
+                        record.completionDate = null;
+                    }
+
+                    updates.add(record);
+                });
+
+                boolean success = ClientService.updateCompletion(updates);
+
+                if (!success) {
+                    showAlert(Alert.AlertType.ERROR, "Failed to update completion.");
+                    return;
+                }
+
+                System.out.println("Completion update successful");
+
+                stage.close();
+            });
+
+
+            root.getChildren().addAll(dateBox, scrollPane, updateBtn);
+        }
+
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
 }

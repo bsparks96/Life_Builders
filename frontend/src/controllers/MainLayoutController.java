@@ -18,6 +18,7 @@ import services.UserService;
 import utils.ClientDetailsCache;
 import utils.CourseCache;
 import utils.CourseSessionCache;
+import utils.ThreadPoolManager;
 import javafx.scene.Parent;
 import javafx.scene.Node;
 
@@ -60,18 +61,16 @@ public class MainLayoutController {
     public void setContent(Node content) {
         contentArea.getChildren().setAll(content);
 
-        // Try updating header navigation buttons
-        // Use lookup to find the controller manually
+
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/Header.fxml"));
         try {
             loader.load();
             HeaderController controller = loader.getController();
-            //controller.updateNavigationButtons();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+    /*
     private void loadDataInBackground() {
         new Thread(() -> {
             try {
@@ -139,7 +138,91 @@ public class MainLayoutController {
             }
         }).start();
     }
+    */
     
+    private void loadDataInBackground() {
+
+        new Thread(() -> {
+            try {
+
+                utils.ThreadPoolManager.submit(() -> {
+                    try {
+	                	if (CourseCache.getCourseNames().isEmpty()) {
+	                        Map<String, Integer> courseMap = ClientService.fetchAllCourses();
+	                        CourseCache.setAvailableCourses(courseMap);
+	                        System.out.println("Courses loaded");
+	                    }
+                    } catch (Exception e) {
+                    	e.printStackTrace();
+                    }
+                });
+
+                utils.ThreadPoolManager.submit(() -> {
+	                try {
+                		if (utils.UserCache.getUserNames().isEmpty()) {
+	                        Map<String, Integer> userMap = UserService.fetchAllUsers();
+	                        utils.UserCache.setAvailableUsers(userMap);
+	                        System.out.println("Users loaded");
+	                    }
+	                } catch (Exception e) {
+	                	e.printStackTrace();
+	                }
+                });
+
+                utils.ThreadPoolManager.submit(() -> {
+                    if (!ClientDetailsCache.isLoaded()) {
+                        List<ClientDetailsResponse> clients = ClientService.fetchAllClientDetails();
+                        ClientDetailsCache.setAllClientDetails(clients);
+                        System.out.println("Client details loaded");
+                    }
+                });
+
+
+                
+                if (!CourseCache.isDetailsLoaded()) {
+                    List<CourseDetailsResponse> courses = CourseService.fetchAllCourseDetails();
+                    if (courses != null) {
+                        CourseCache.setCourseDetails(courses);
+                        System.out.println("Course details loaded into cache");
+                    }
+                }
+
+
+                if (CourseCache.isDetailsLoaded()) {
+
+                    for (CourseDetailsResponse course : CourseCache.getAllCourseDetails()) {
+
+                        if (course.getIterations() == null) continue;
+
+                        for (IterationOut iteration : course.getIterations()) {
+
+                            int iterationID = iteration.getIterationID();
+
+                            if (!CourseSessionCache.isLoaded(iterationID)) {
+
+                                utils.ThreadPoolManager.submit(() -> {
+
+                                    IterationAttendanceResponse response =
+                                            CourseService.fetchIterationAttendance(iterationID);
+
+                                    if (response != null) {
+                                        CourseSessionCache.setFromResponse(response);
+                                        System.out.println("Loaded attendance for iteration " + iterationID);
+                                    }
+
+                                });
+                            }
+                        }
+                    }
+                }
+
+                System.out.println("All background tasks submitted");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
     
     
 }

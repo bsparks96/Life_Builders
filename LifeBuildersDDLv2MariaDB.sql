@@ -89,17 +89,38 @@ CREATE TABLE CourseIterations (
     FOREIGN KEY (courseID) REFERENCES Courses(courseID)
 );
 
+CREATE TABLE CourseSessions (
+	sessionID INT PRIMARY KEY auto_increment,
+    courseID INT,
+    iterationID INT,
+    sessionDate DATE,
+    
+    FOREIGN KEY (courseID) REFERENCES Courses(courseID),
+    FOREIGN KEY (iterationID) REFERENCES CourseIterations(iterationID)
+    );
+    
+CREATE TABLE SessionAttendance (
+	attendanceID INT PRIMARY KEY auto_increment,
+    sessionID INT,
+    clientID INT,
+    attendance boolean DEFAULT false,
+    
+    FOREIGN KEY (sessionID) REFERENCES CourseSessions(sessionID),
+    FOREIGN KEY (clientID) REFERENCES Clients(clientID),
 
+    UNIQUE (sessionID, clientID)
+    );
+	
 
 CREATE TABLE CourseHasClients (
     clientID INT NOT NULL,
     courseID INT NOT NULL,
     iterationID INT,
-    startDate DATE,
-    endDate DATE,
+    startDate DATE, -- lets remove this since it is stored elsewhere
+    endDate DATE,  -- lets remove this since it is stored elsewhere
     completionDate DATE,  -- nullable is okay
 
-    PRIMARY KEY (clientID, courseID),
+    PRIMARY KEY (clientID, iterationID),
 
     FOREIGN KEY (clientID) REFERENCES Clients(clientID),
     FOREIGN KEY (courseID) REFERENCES Courses(courseID),

@@ -76,3 +76,14 @@ class IterationAttendanceResponse(BaseModel):
     iterationID: int
     sessions: List[SessionInfo]
     clients: List[ClientAttendance]
+
+
+class CompletionUpdate(BaseModel):
+    clientID: int
+    courseID: int
+    iterationID: int
+    completionDate: date  # allow null to "clear"
+
+
+class CompletionBulkUpdate(BaseModel):
+    updates: List[CompletionUpdate]

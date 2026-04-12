@@ -3,6 +3,7 @@ package services;
 import models.Client;
 import models.ClientDetailsResponse;
 import models.ClientEntryRequest;
+import models.CompletionUpdateRequest;
 import utils.CourseCache;
 import utils.SessionManager;
 import utils.ApiConfig;
@@ -180,6 +181,42 @@ public class ClientService {
 
             System.out.println("Enroll Status: " + response.statusCode());
             System.out.println("Enroll Response: " + response.body());
+
+            return response.statusCode() == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public static boolean updateCompletion(List<CompletionUpdateRequest.CompletionRecord> updates) {
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            ObjectMapper mapper = new ObjectMapper();
+
+            CompletionUpdateRequest requestBody = new CompletionUpdateRequest();
+            requestBody.updates = updates;
+
+            String json = mapper.writeValueAsString(requestBody);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/completion/"))
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .PUT(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            System.out.println("Completion Request JSON: " + json);
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Completion Status: " + response.statusCode());
+            System.out.println("Completion Response: " + response.body());
 
             return response.statusCode() == 200;
 
