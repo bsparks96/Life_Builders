@@ -20,7 +20,6 @@ public class AuthService {
     private static final String LOGIN_URL = ApiConfig.BASE_URL + "/api/users/login";
     private static final String ME_URL = ApiConfig.BASE_URL + "/api/users/me";
 
-    // LOGIN
 
     public static boolean login(String username, String password) {
         try {
@@ -36,13 +35,11 @@ public class AuthService {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
-            // Send body
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = requestBody.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
 
-            // Read response
             int status = conn.getResponseCode();
             InputStream responseStream = (status >= 200 && status < 300)
                     ? conn.getInputStream()
@@ -71,7 +68,6 @@ public class AuthService {
         }
     }
 
-    // GET CURRENT USER (/users/me)
 
     public static boolean fetchCurrentUser() {
         try {
@@ -96,7 +92,6 @@ public class AuthService {
                 int userID = json.get("userID").asInt();
                 String role = json.get("role").asText();
 
-                // Store user info
                 SessionManager.setUser(username, userID, role);
 
                 return true;
@@ -114,7 +109,6 @@ public class AuthService {
         }
     }
 
-    // INNER CLASS (Login Request)
 
     private static class LoginRequest {
         public String username;

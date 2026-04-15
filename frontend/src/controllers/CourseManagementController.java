@@ -148,7 +148,6 @@ public class CourseManagementController {
         newEndPicker.setPromptText("End Date");
         newEndPicker.setMaxWidth(150);
 
-        // Listener: auto-set end date based on course length if empty
         newStartPicker.valueProperty().addListener((obs, oldDate, newDate) -> {
             if (newEndPicker.getValue() == null && newDate != null) {
                 try {
@@ -315,13 +314,7 @@ public class CourseManagementController {
             }
             detailBox.getChildren().add(new Label(instructorList.toString()));
 
-            /*
-            StringBuilder iterationList = new StringBuilder("Current Iterations:\n");
-            for (IterationOut iteration : details.getIterations()) {
-                iterationList.append("- ").append(iteration.getStartDate()).append(" to ").append(iteration.getEndDate()).append("\n");
-            }
-            detailBox.getChildren().add(new Label(iterationList.toString()));
-			*/
+
             
             detailBox.getChildren().add(new Label("Current Iterations:"));
 
@@ -331,12 +324,10 @@ public class CourseManagementController {
 	        attendanceSection.setVisible(false);
 	        attendanceSection.setManaged(false);
 
-	        // Grid
 	        attendanceGrid = new GridPane();
 	        attendanceGrid.setHgap(10);
 	        attendanceGrid.setVgap(5);
 
-	        // Buttons
 	        HBox buttonRow = new HBox(10);
 	        Button updateBtn = new Button("Update");
 	        updateBtn.setOnAction(e -> handleUpdateAttendance());
@@ -415,7 +406,7 @@ public class CourseManagementController {
 	        gridScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
 	        gridScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 	        gridScroll.prefViewportWidthProperty().bind(
-	        	    detailsPane.widthProperty().subtract(100) // 200 name column + padding
+	        	    detailsPane.widthProperty().subtract(100)
 	        	);
 	        headerScroll.prefViewportWidthProperty().bind(
 	        	    gridScroll.prefViewportWidthProperty()
@@ -432,7 +423,6 @@ public class CourseManagementController {
 
 	        HBox headerContainer = new HBox(2);
 
-		     // empty spacer for name column alignment
 		    Region spacer = new Region();
 		    spacer.prefWidthProperty().bind(nameColumn.widthProperty());
 	
@@ -452,10 +442,8 @@ public class CourseManagementController {
             courseDetailPane.setVisible(false);
             courseDetailPane.setManaged(false);
 
-            // Remove any previous detail views (but NOT the form)
             detailsPane.getChildren().removeIf(node -> node != courseDetailPane);
 
-            // Add the new detail view
             detailsPane.getChildren().add(detailBox);
 
         } catch (Exception e) {
@@ -636,9 +624,6 @@ public class CourseManagementController {
         
         grid.setAlignment(Pos.CENTER_LEFT);
 
-        // =========================
-        // 🔷 SPACING / STYLE
-        // =========================
 
         grid.setHgap(10);
         nameColumn.setSpacing(8);
@@ -658,7 +643,7 @@ public class CourseManagementController {
 
             String[] parts = entry.getKey().split("-");
 
-            int iterationID = Integer.parseInt(parts[0]); // not needed for API but kept for clarity
+            int iterationID = Integer.parseInt(parts[0]); 
             int clientID = Integer.parseInt(parts[1]);
             int sessionID = Integer.parseInt(parts[2]);
 
@@ -679,7 +664,6 @@ public class CourseManagementController {
             if (success) {
                 System.out.println("Attendance updated successfully!");
 
-                // Clear changes after success
                 attendanceChanges.clear();
 
             } else {
@@ -699,10 +683,8 @@ public class CourseManagementController {
         VBox root = new VBox(10);
         root.setPrefSize(350, 450);
 
-        // 🔷 ListView now holds full objects
         ListView<ClientDetailsResponse> clientList = new ListView<>();
 
-        // 🔷 Get already enrolled clients for this iteration
         List<CourseSessionCache.ClientAttendance> enrolledClients =
                 CourseSessionCache.getClients(iterationID);
 
@@ -711,13 +693,11 @@ public class CourseManagementController {
             enrolledClientIDs.add(c.clientID);
         }
 
-        // 🔷 Build selectable client list (exclude already enrolled)
         ObservableList<ClientDetailsResponse> clients = FXCollections.observableArrayList();
         Map<ClientDetailsResponse, BooleanProperty> selectionMap = new HashMap<>();
 
         for (ClientDetailsResponse client : ClientDetailsCache.getAllClients().values()) {
 
-            // ❌ Skip already enrolled clients
             if (enrolledClientIDs.contains(client.getClientID())) continue;
 
             clients.add(client);
@@ -726,7 +706,6 @@ public class CourseManagementController {
 
         clientList.setItems(clients);
 
-        // 🔷 Checkbox UI
         clientList.setCellFactory(listView -> new CheckBoxListCell<ClientDetailsResponse>(client -> selectionMap.get(client)) {
             @Override
             public void updateItem(ClientDetailsResponse item, boolean empty) {
@@ -763,7 +742,6 @@ public class CourseManagementController {
                 }
             }
 
-            // 🔷 Refresh attendance after enrollment
             IterationAttendanceResponse response =
                     CourseService.fetchIterationAttendance(iterationID);
 
@@ -775,7 +753,6 @@ public class CourseManagementController {
             stage.close();
         });
 
-        // 🔷 Optional UX: message if no clients available
         if (clients.isEmpty()) {
             root.getChildren().add(new Label("All clients are already enrolled."));
         }
@@ -812,7 +789,6 @@ public class CourseManagementController {
 
             VBox listContainer = new VBox(8);
 
-            // Reset tracking for this dialog
             completionChanges.clear();
 
             for (var client : clients) {
@@ -857,11 +833,11 @@ public class CourseManagementController {
                             new CompletionUpdateRequest.CompletionRecord();
 
                     record.clientID = clientID;
-                    record.courseID = courseID;       // 👈 make sure this is passed into dialog
+                    record.courseID = courseID;       
                     record.iterationID = iterationID;
 
                     if (completed) {
-                        record.completionDate = selectedDate.toString(); // "YYYY-MM-DD"
+                        record.completionDate = selectedDate.toString(); 
                     } else {
                         record.completionDate = null;
                     }

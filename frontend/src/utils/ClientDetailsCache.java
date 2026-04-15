@@ -10,7 +10,6 @@ public class ClientDetailsCache {
 
     private static final Map<Integer, ClientDetailsResponse> clientDetailsMap = new HashMap<>();
 
-    // Store ALL client details (bulk load)
 
     public static void setAllClientDetails(List<ClientDetailsResponse> clients) {
         clientDetailsMap.clear();
@@ -20,13 +19,11 @@ public class ClientDetailsCache {
         }
     }
 
-    // Get one client by ID
 
     public static ClientDetailsResponse getClient(int clientID) {
         return clientDetailsMap.get(clientID);
     }
 
-    // Check if cache is loaded
 
     public static boolean isLoaded() {
         return !clientDetailsMap.isEmpty();

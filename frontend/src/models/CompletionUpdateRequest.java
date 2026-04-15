@@ -10,6 +10,6 @@ public class CompletionUpdateRequest {
         public int clientID;
         public int courseID;
         public int iterationID;
-        public String completionDate; // null allowed
+        public String completionDate; 
     }
 }

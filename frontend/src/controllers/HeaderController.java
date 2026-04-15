@@ -25,7 +25,6 @@ public class HeaderController {
     @FXML private Button forwardButton;
     @FXML private Button homeButton;
     
-    //private static String currentFxml = null;
 
 
     public static void setMainStage(Stage stage) {
@@ -79,7 +78,6 @@ public class HeaderController {
     
     @FXML
     public void initialize() {
-        //updateNavigationButtons();
     }
 
     @FXML
@@ -90,7 +88,6 @@ public class HeaderController {
             forwardStack.clear();
             currentScene = "Home.fxml";
             changeScene("Home.fxml");
-            //updateNavigationButtons();
         }
     }
 
@@ -126,11 +123,7 @@ public class HeaderController {
     public void updateNavigationButtons() {
     	String current = getCurrentSceneFxml();
         boolean isHome = isCurrentScene("Home.fxml");
-/*
-        System.out.println("Current Scene: " + current);
-        System.out.println("Is Home: " + isHome);
-        System.out.println("Back Stack: " + historyStack);
-        System.out.println("Forward Stack: " + forwardStack); */
+
         backButton.setDisable(historyStack.isEmpty());
         forwardButton.setDisable(forwardStack.isEmpty());
         homeButton.setDisable(isHome);

@@ -47,7 +47,7 @@ public class ClientService {
     public static Map<String, Integer> fetchAllCourses() throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-        		.uri(URI.create(utils.ApiConfig.BASE_URL + "/api/courses/"))  // adjust if needed
+        		.uri(URI.create(utils.ApiConfig.BASE_URL + "/api/courses/"))  
                 .GET()
                 .build();
 
@@ -167,9 +167,9 @@ public class ClientService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(ApiConfig.BASE_URL + "/api/clients/enroll/"))
-                    .version(HttpClient.Version.HTTP_1_1)   // ✅ ADD THIS
+                    .version(HttpClient.Version.HTTP_1_1)   
                     .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")   // ✅ ADD THIS
+                    .header("Accept", "application/json")   
                     .header("Authorization", "Bearer " + SessionManager.getToken())
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();

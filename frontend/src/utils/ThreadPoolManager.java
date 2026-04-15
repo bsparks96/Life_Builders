@@ -6,7 +6,6 @@ import java.util.concurrent.Future;
 
 public class ThreadPoolManager {
 
-    // 🔷 Fixed thread pool (tune size later)
     private static final ExecutorService executor = Executors.newFixedThreadPool(24);
 
     public static void submit(Runnable task) {

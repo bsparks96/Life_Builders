@@ -7,6 +7,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.event.ActionEvent;
 
+import utils.ClientDetailsCache;
+import utils.CourseCache;
+import utils.StatisticsCache;
+
+import models.StatisticsResponse;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class StatisticsController {
 
     @FXML private Label totalClientsLabel;
@@ -17,24 +26,64 @@ public class StatisticsController {
     @FXML private Button clientReportButton;
     @FXML private Button courseReportButton;
 
+    private static final String[] MONTH_ORDER = {
+            "Jan","Feb","Mar","Apr","May","Jun",
+            "Jul","Aug","Sep","Oct","Nov","Dec"
+    };
+
     @FXML
     public void initialize() {
-        // Set initial stat values (these will eventually come from the backend)
-        totalClientsLabel.setText("Total Clients: 120");
-        totalCoursesLabel.setText("Total Courses: 35");
-        completionRateLabel.setText("Completion Rate: 85%");
-        activeParticipantsLabel.setText("Active Participants: 58");
+
+        // LOAD FROM CACHE
+
+        int totalClients = ClientDetailsCache.isLoaded()
+                ? ClientDetailsCache.getAllClients().size()
+                : 0;
+
+        int totalCourses = !CourseCache.getCourseNames().isEmpty()
+                ? CourseCache.getCourseNames().size()
+                : 0;
+
+        totalClientsLabel.setText("Total Clients: " + totalClients);
+        totalCoursesLabel.setText("Total Courses: " + totalCourses);
+
+        // LOAD STATISTICS CACHE
+
+        if (!StatisticsCache.isLoaded()) {
+            completionRateLabel.setText("Completion Rate: (loading)");
+            activeParticipantsLabel.setText("Active Monthly Participants: (loading)");
+            return;
+        }
+
+        StatisticsResponse stats = StatisticsCache.getStatistics();
+
+        // SET LABELS
+
+        activeParticipantsLabel.setText(
+                "Active Monthly Participants: " + stats.activeMonthlyParticipants
+        );
+
+        completionRateLabel.setText(
+                "Completion Rate: " + String.format("%.1f", stats.completionRate) + "%"
+        );
+
+        // BUILD CHART
+
+        Map<String, Integer> monthMap = new HashMap<>();
+
+        for (StatisticsResponse.MonthlyCompletion mc : stats.monthlyCompletions) {
+            monthMap.put(mc.month, mc.count);
+        }
+
+        courseCompletionChart.getData().clear();
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Course Completions");
-        series.getData().add(new XYChart.Data<>("Jan", 20));
-        series.getData().add(new XYChart.Data<>("Feb", 25));
-        series.getData().add(new XYChart.Data<>("Mar", 23));
-        series.getData().add(new XYChart.Data<>("Apr", 22));
-        series.getData().add(new XYChart.Data<>("May", 24));
-        series.getData().add(new XYChart.Data<>("Jun", 21));
-        series.getData().add(new XYChart.Data<>("Jul", 26));
-        series.getData().add(new XYChart.Data<>("Aug", 23));
+
+        for (String month : MONTH_ORDER) {
+            int count = monthMap.getOrDefault(month, 0);
+            series.getData().add(new XYChart.Data<>(month, count));
+        }
 
         courseCompletionChart.getData().add(series);
     }
@@ -42,12 +91,10 @@ public class StatisticsController {
     @FXML
     private void handleClientReport(ActionEvent event) {
         System.out.println("Generating client report...");
-        // Add scene navigation or report generation here
     }
 
     @FXML
     private void handleCourseReport(ActionEvent event) {
         System.out.println("Generating course report...");
-        // Add scene navigation or report generation here
     }
 }

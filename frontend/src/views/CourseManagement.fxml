@@ -9,7 +9,6 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="controllers.CourseManagementController">
 
-    <!-- Top new course button -->
     <top>
         <HBox alignment="CENTER_RIGHT" spacing="10">
             <padding>
@@ -19,7 +18,6 @@
         </HBox>
     </top>
 
-    <!-- Left course list and sorting -->
     <left>
         <VBox spacing="10">
             <padding>
@@ -35,7 +33,6 @@
         </VBox>
     </left>
 
-    <!-- Center course detail view or new course form -->
     <center>
         <StackPane fx:id="detailsPane">
             <VBox fx:id="courseDetailPane" spacing="10" visible="false" managed="false">
@@ -61,14 +58,11 @@
                 <Label text="Iterations (optional):" />
                 
 				<VBox fx:id="iterationsBox" spacing="10">
-				    <!-- Existing -->
 				    <HBox spacing="10">
 				        <DatePicker fx:id="iterationStartPicker"/>
 				        <DatePicker fx:id="iterationEndPicker"/>
-				        <!---<Button text="Add Iteration" onAction="#handleAddIteration"/>-->
 				    </HBox>
 				
-				    <!-- NEW: Day Selection -->
 				    <HBox spacing="8">
 				        <ToggleButton text="M" fx:id="monBtn"/>
 				        <ToggleButton text="Tu" fx:id="tueBtn"/>
@@ -79,14 +73,12 @@
 				        <ToggleButton text="Su" fx:id="sunBtn"/>
 				    </HBox>
 				
-				    <!-- NEW: Generated Sessions -->
 				    <VBox spacing="5">
 					    <Label text="Session Calendar:"/>
 					
 					    <DatePicker fx:id="sessionCalendar" prefWidth="200"/>
 					</VBox>
 				
-				    <!-- OPTIONAL -->
 				    <HBox spacing="10">
 				        <DatePicker fx:id="manualSessionPicker" promptText="Add Session Date"/>
 				        <Button text="Add Date"/>

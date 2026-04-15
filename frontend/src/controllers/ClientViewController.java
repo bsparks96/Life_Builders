@@ -35,7 +35,6 @@ public class ClientViewController {
     @FXML
     public void initialize() {
 
-        // 🔷 Load from cache instead of API
         Map<Integer, ClientDetailsResponse> clients = ClientDetailsCache.getAllClients();
 
         if (clients == null || clients.isEmpty()) {
@@ -43,7 +42,6 @@ public class ClientViewController {
             return;
         }
 
-        // Populate list
         for (ClientDetailsResponse c : clients.values()) {
             String fullName = c.getFullName();
 
@@ -51,7 +49,6 @@ public class ClientViewController {
             clientNameToID.put(fullName, c.getClientID());
         }
 
-        // 🔷 Selection listener
         clientList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             Integer clientID = clientNameToID.get(newVal);
             if (clientID != null) {
@@ -59,7 +56,6 @@ public class ClientViewController {
             }
         });
 
-        // 🔷 Sorting
         sortAlphaButton.setOnAction(e ->
                 clientList.getItems().sort(String::compareToIgnoreCase)
         );
@@ -84,7 +80,6 @@ public class ClientViewController {
         genderLabel.setText(client.getGender());
         educationLabel.setText(client.getEducation());
 
-        // Current course
         if (client.getCurrentCourse() != null) {
             currentCourseLabel.setText(client.getCurrentCourse().getCourseName());
             currentCourseDateLabel.setText(
@@ -96,7 +91,6 @@ public class ClientViewController {
             currentCourseDateLabel.setText("");
         }
 
-        // Completed courses
         completedCoursesBox.getChildren().clear();
         for (ClientDetailsResponse.CompletedCourse course : client.getCompletedCourses()) {
             completedCoursesBox.getChildren().add(
@@ -104,7 +98,6 @@ public class ClientViewController {
             );
         }
 
-        // Incarceration periods
         incarcerationPeriodsBox.getChildren().clear();
         for (ClientDetailsResponse.IncarcerationPeriod period : client.getIncarcerationPeriods()) {
             incarcerationPeriodsBox.getChildren().add(

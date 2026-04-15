@@ -23,36 +23,6 @@ public class LoginController {
     @FXML
     private PasswordField passwordField;
 
-    /*
-    @FXML
-    private void handleLogin(ActionEvent event) {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
-
-        if (username == null || username.isBlank() ||
-            password == null || password.isBlank()) {
-
-            showAlert("Login Error", "Username and password cannot be empty.");
-            return;
-        }
-
-        boolean loginSuccess = AuthService.login(username, password);
-
-        if (!loginSuccess) {
-            showAlert("Login Failed", "Invalid username/password or unable to connect.");
-            return;
-        }
-
-        boolean userLoaded = AuthService.fetchCurrentUser();
-
-        if (!userLoaded) {
-            showAlert("Session Error", "Failed to retrieve user session.");
-            return;
-        }
-
-        HeaderController.pushScene("Home.fxml");
-    }
-    */
     
     @FXML
     private void handleLogin(ActionEvent event) {
@@ -67,7 +37,6 @@ public class LoginController {
             return;
         }
 
-        // 🔷 Disable UI while attempting login
         usernameField.setDisable(true);
         passwordField.setDisable(true);
 
@@ -76,14 +45,12 @@ public class LoginController {
             boolean loginSuccess = false;
 
             try {
-                // 🔷 First attempt
                 loginSuccess = AuthService.login(username, password);
 
-                // 🔷 Retry once if failed
                 if (!loginSuccess) {
                     System.out.println("Login failed, retrying...");
 
-                    Thread.sleep(1500); // wait for backend to stabilize
+                    Thread.sleep(1500); 
 
                     loginSuccess = AuthService.login(username, password);
                 }
@@ -94,7 +61,6 @@ public class LoginController {
 
             boolean finalLoginSuccess = loginSuccess;
 
-            // 🔷 Switch back to UI thread
             javafx.application.Platform.runLater(() -> {
 
                 usernameField.setDisable(false);

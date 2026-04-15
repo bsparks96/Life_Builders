@@ -14,9 +14,6 @@ public class ClientDetailsResponse {
     private List<CompletedCourse> completedCourses;
     private List<IncarcerationPeriod> incarcerationPeriods;
 
-    // ========================
-    // Getters and Setters
-    // ========================
 
     public int getClientID() {
         return clientID;
@@ -82,9 +79,7 @@ public class ClientDetailsResponse {
         this.incarcerationPeriods = incarcerationPeriods;
     }
 
-    // ========================
-    // Inner Classes
-    // ========================
+
 
     public static class CurrentCourse {
         private String courseName;

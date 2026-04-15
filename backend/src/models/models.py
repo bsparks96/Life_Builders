@@ -91,4 +91,3 @@ class SessionAttendance(Base):
     clientID = Column(Integer, ForeignKey("Clients.clientID"))
     attendance = Column(Integer, default=0)
 
-

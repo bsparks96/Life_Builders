@@ -56,7 +56,6 @@ public class ClientFormController {
         
         courseCombo1.setItems(utils.CourseCache.getCourseNames());
         
-        // Optional: implement auto-complete style filtering (basic)
         courseCombo1.setEditable(true);
         courseCombo1.setVisibleRowCount(5);
         
@@ -71,7 +70,7 @@ public class ClientFormController {
                     }
                 }
                 courseCombo1.setItems(filtered);
-                courseCombo1.show(); // keep dropdown visible
+                courseCombo1.show(); 
             }
         });
     }
@@ -98,7 +97,6 @@ public class ClientFormController {
         request.gender = genderField.getText();
         request.educationLevel = educationCombo.getValue();
 
-        // Incarceration periods
         request.incarcerationPeriods = new ArrayList<>();
         for (Node node : incarcerationBox.getChildren()) {
             if (node instanceof HBox row) {
@@ -114,7 +112,6 @@ public class ClientFormController {
             }
         }
 
-        // Courses completed
         request.completedCourses = new ArrayList<>();
         for (Node node : coursesBox.getChildren()) {
             if (node instanceof HBox row) {
@@ -131,7 +128,6 @@ public class ClientFormController {
             }
         }
 
-        // Send to API
         boolean success = services.ClientService.submitClientEntry(request);
         if (success) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Client successfully submitted!");
@@ -151,7 +147,7 @@ public class ClientFormController {
         DatePicker start = new DatePicker();
         DatePicker end = new DatePicker();
         Button addButton = new Button("+");
-        addButton.setOnAction(e -> addIncarcerationPeriod()); // recursion to keep adding more
+        addButton.setOnAction(e -> addIncarcerationPeriod()); 
 
         newRow.getChildren().addAll(start, end, addButton);
         incarcerationBox.getChildren().add(newRow);
@@ -167,7 +163,6 @@ public class ClientFormController {
         dynamicCourseCombo.setItems(utils.CourseCache.getCourseNames());
         dynamicCourseCombo.setVisibleRowCount(5);
 
-        // 🔍 Add filtering logic for dynamic ComboBox
         dynamicCourseCombo.getEditor().textProperty().addListener((obs, oldText, newText) -> {
             if (newText == null || newText.isEmpty()) {
                 dynamicCourseCombo.setItems(utils.CourseCache.getCourseNames());
@@ -179,7 +174,7 @@ public class ClientFormController {
                     }
                 }
                 dynamicCourseCombo.setItems(filtered);
-                dynamicCourseCombo.show(); // show filtered results
+                dynamicCourseCombo.show(); 
             }
         });
 
