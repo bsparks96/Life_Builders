@@ -58,15 +58,22 @@ public class CourseManagementController {
     @FXML private TextField courseLengthField;
     @FXML private ListView<String> instructorListView;
     @FXML private ComboBox<String> instructorCombo;
+    
+    @FXML private Label courseNameLabel;
+    @FXML private Label instructorLabel;
+    @FXML private Label courseLengthLabel;
+    @FXML private Label iterationsLabel;
 
 
     @FXML private VBox courseDetailPane;
     @FXML private VBox iterationsBox;
+    @FXML private VBox instructorBox;
     private VBox attendanceSection;
     private GridPane attendanceGrid;
     @FXML private DatePicker iterationStartPicker;
     @FXML private DatePicker iterationEndPicker;
     @FXML private DatePicker sessionCalendar;
+    @FXML private DatePicker manualSessionPicker;
 
     @FXML private ToggleButton monBtn;
     @FXML private ToggleButton tueBtn;
@@ -79,6 +86,7 @@ public class CourseManagementController {
     private Set<LocalDate> sessionDates = new HashSet<>();
     private Map<String, Boolean> attendanceChanges = new HashMap<>();
     private Map<Integer, Boolean> completionChanges = new HashMap<>();
+    private List<ClientDetailsResponse> selectedIterationClients = new ArrayList<>();
 
     private GridPane headerGridRef;
     private VBox nameColumnRef;
@@ -270,20 +278,52 @@ public class CourseManagementController {
     @FXML
     private void handleNewCourseClick(ActionEvent event) {
 
-    	System.out.println("New Course clicked");
+        System.out.println("New Course clicked");
+
         courseNameField.clear();
         instructorListView.getItems().clear();
         courseLengthField.clear();
         iterationStartPicker.setValue(null);
         iterationEndPicker.setValue(null);
+        sessionDates.clear();
+
+        instructorCombo.setValue(null);
+
+        instructorBox.setVisible(true);
+        instructorBox.setManaged(true);
+
+        courseLengthField.setVisible(true);
+        courseLengthField.setManaged(true);
+
+        instructorLabel.setVisible(true);
+        instructorLabel.setManaged(true);
+
+        courseLengthLabel.setVisible(true);
+        courseLengthLabel.setManaged(true);
+
+        iterationsLabel.setVisible(true);
+        iterationsLabel.setManaged(true);
+
+        sessionCalendar.setVisible(true);
+        sessionCalendar.setManaged(true);
+
+        manualSessionPicker.setVisible(true);
+        manualSessionPicker.setManaged(true);
+
+        removeIterationButtons();
+
+        detailsPane.getChildren().clear();
+        detailsPane.getChildren().add(courseDetailPane);
+
         courseDetailPane.setVisible(true);
         courseDetailPane.setManaged(true);
-        instructorCombo.setValue(null);
-        detailsPane.getChildren().removeIf(node -> node != courseDetailPane);
     }
     
 
     private void showCourseDetails(String courseName) {
+    	
+    	removeIterationButtons();
+    	
     	Integer courseID = CourseCache.getCourseID(courseName);
         if (courseID == null) {
             System.err.println("Course ID not found for course: " + courseName);
@@ -294,7 +334,6 @@ public class CourseManagementController {
         	CourseDetailsResponse details = CourseCache.getCourseDetails(courseID);
 
         	if (details == null) {
-        	    // fallback if cache isn't ready yet
         	    try {
         	        details = CourseService.fetchCourseDetails(courseID);
         	    } catch (Exception e) {
@@ -331,10 +370,11 @@ public class CourseManagementController {
 	        HBox buttonRow = new HBox(10);
 	        Button updateBtn = new Button("Update");
 	        updateBtn.setOnAction(e -> handleUpdateAttendance());
+	        buttonRow.getChildren().addAll(updateBtn);
 	        
 	        for (IterationOut iteration : details.getIterations()) {
 
-	            int iterationID = iteration.getIterationID(); // ✅ NOW IN SCOPE
+	            int iterationID = iteration.getIterationID();
 
 	            HBox iterationRow = new HBox(10);
 
@@ -357,7 +397,6 @@ public class CourseManagementController {
 
 	            
 	            Button addClientsBtn = new Button("Add Clients");
-	            buttonRow.getChildren().addAll(updateBtn, addClientsBtn);
 	            addClientsBtn.setOnAction(e -> {
 	                openAddClientsDialog(iterationID, courseID);
 	            });
@@ -398,9 +437,6 @@ public class CourseManagementController {
 	        nameColumn.setSpacing(5);
 	        nameColumn.setStyle("-fx-padding: 0 5 0 0;");
 
-	        attendanceGrid = new GridPane();
-	        attendanceGrid.setHgap(10);
-	        attendanceGrid.setVgap(8);
 
 	        ScrollPane gridScroll = new ScrollPane(attendanceGrid);
 	        gridScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
@@ -435,7 +471,18 @@ public class CourseManagementController {
 	        
 	        detailBox.getChildren().add(attendanceSection);
 
-            detailBox.getChildren().add(new Label("Past Iterations: "));
+	        Label pastLabel = new Label("Past Iterations:");
+
+	        Button addIterationBtn = new Button("Add Iteration");
+
+	        addIterationBtn.setOnAction(e -> {
+	             openAddIterationForm(courseID);
+	        });
+
+	        VBox pastSection = new VBox(5);
+	        pastSection.getChildren().addAll(pastLabel, addIterationBtn);
+
+	        detailBox.getChildren().add(pastSection);
 
 
 
@@ -483,13 +530,15 @@ public class CourseManagementController {
         updateCalendarHighlighting();
     }
     
+    
     private void updateCalendarHighlighting() {
+
         sessionCalendar.setDayCellFactory(picker -> new DateCell() {
             @Override
             public void updateItem(LocalDate date, boolean empty) {
                 super.updateItem(date, empty);
 
-                if (empty) return;
+                if (empty || date == null) return;
 
                 if (sessionDates.contains(date)) {
                     setStyle("-fx-background-color: lightgreen;");
@@ -504,7 +553,9 @@ public class CourseManagementController {
                         sessionDates.add(date);
                     }
 
-                    sessionCalendar.getEditor().setText(sessionCalendar.getEditor().getText());
+                    // 🔥 FORCE REFRESH
+                    sessionCalendar.setDayCellFactory(null);
+                    updateCalendarHighlighting();
                 });
             }
         });
@@ -865,4 +916,229 @@ public class CourseManagementController {
         stage.setScene(scene);
         stage.show();
     }
+    
+    private void openAddIterationForm(int courseID) {
+    	
+    	removeIterationButtons();
+
+    	// Get course name
+
+    	String courseName = utils.CourseCache.courseMap.get(courseID);
+    	
+        // Reset / show course field
+
+        courseNameField.setVisible(true);
+        courseNameField.setManaged(true);
+
+        courseNameField.setText(courseName);
+        courseNameField.setDisable(true);  
+        iterationsLabel.setVisible(true);
+        iterationsLabel.setManaged(true);
+        
+        iterationStartPicker.setVisible(true);
+        iterationStartPicker.setManaged(true);
+
+        iterationEndPicker.setVisible(true);
+        iterationEndPicker.setManaged(true);
+        
+        monBtn.setVisible(true);
+        monBtn.setManaged(true);
+
+        tueBtn.setVisible(true);
+        tueBtn.setManaged(true);
+
+        wedBtn.setVisible(true);
+        wedBtn.setManaged(true);
+
+        thuBtn.setVisible(true);
+        thuBtn.setManaged(true);
+
+        friBtn.setVisible(true);
+        friBtn.setManaged(true);
+
+        satBtn.setVisible(true);
+        satBtn.setManaged(true);
+
+        sunBtn.setVisible(true);
+        sunBtn.setManaged(true);
+        
+        sessionCalendar.setVisible(true);
+        sessionCalendar.setManaged(true);
+        
+        for (Node node : courseDetailPane.getChildren()) {
+            if (node instanceof Button btn && btn.getText().equals("Save")) {
+                btn.setVisible(false);
+                btn.setManaged(false);
+            }
+        }
+        
+        Button addClientsBtn = new Button("Add Clients");
+
+        addClientsBtn.setOnAction(e -> {
+            openAddClientsForIterationDialog();
+        });
+
+        Button submitBtn = new Button("Submit Iteration");
+
+        submitBtn.setOnAction(e -> {
+
+            LocalDate start = iterationStartPicker.getValue();
+            LocalDate end = iterationEndPicker.getValue();
+            
+            if (start == null || end == null) {
+                showAlert(Alert.AlertType.ERROR, "Start and End dates are required.");
+                return;
+            }
+
+            List<String> sessions = getSessionDateStrings();
+            
+            if (sessions.isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "At least one session date is required.");
+                return;
+            }
+
+            models.CreateIterationRequest req = new models.CreateIterationRequest();
+
+            req.courseID = courseID;
+            req.courseStartDate = start.toString();
+            req.courseEndDate = end.toString();
+
+            req.courseLocation = "Default Location";
+            
+            List<Integer> clientIDs = new ArrayList<>();
+            for (ClientDetailsResponse c : selectedIterationClients) {
+                clientIDs.add(c.getClientID());
+            }
+            req.clientIDs = clientIDs.isEmpty() ? null : clientIDs;
+
+            // Sessions
+            req.sessionDates = sessions;
+            boolean success = services.CourseService.createIteration(req);
+
+            if (success) {
+                showAlert(Alert.AlertType.INFORMATION, "Iteration created successfully!");
+
+                refreshCourseCache();
+
+                showCourseDetails(utils.CourseCache.courseMap.get(courseID));
+
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Failed to create iteration.");
+            }
+
+            /*
+            System.out.println("Start Date: " + (start != null ? start : "null"));
+            System.out.println("End Date: " + (end != null ? end : "null"));
+
+            System.out.println("Session Dates:");
+            for (String s : sessions) {
+                System.out.println(" - " + s);
+            }
+
+            System.out.println("Clients:");
+            for (ClientDetailsResponse c : selectedIterationClients) {
+                System.out.println(" - " + c.getFullName() + " (ID: " + c.getClientID() + ")");
+            }
+
+            System.out.println("--------------------------------");
+            */
+        });
+        
+        iterationsBox.getChildren().addAll(addClientsBtn, submitBtn);
+
+
+        // Hide everything else
+
+        instructorBox.setVisible(false);
+        instructorBox.setManaged(false);
+        
+        courseLengthField.setVisible(false);
+        courseLengthField.setManaged(false);
+
+
+        instructorLabel.setVisible(false);
+        instructorLabel.setManaged(false);
+
+        courseLengthLabel.setVisible(false);
+        courseLengthLabel.setManaged(false);
+
+        
+        // Show form
+        
+        courseDetailPane.setVisible(true);
+        courseDetailPane.setManaged(true);
+
+        detailsPane.getChildren().removeIf(node -> node != courseDetailPane);
+    }
+    
+    private void openAddClientsForIterationDialog() {
+    	
+        Stage stage = new Stage();
+        stage.setTitle("Select Clients");
+
+        VBox root = new VBox(10);
+        root.setPrefSize(350, 450);
+
+        ListView<ClientDetailsResponse> clientList = new ListView<>();
+
+        ObservableList<ClientDetailsResponse> clients =
+                FXCollections.observableArrayList(ClientDetailsCache.getAllClients().values());
+
+        Map<ClientDetailsResponse, BooleanProperty> selectionMap = new HashMap<>();
+
+        for (ClientDetailsResponse client : clients) {
+            selectionMap.put(client, new SimpleBooleanProperty(false));
+        }
+
+        clientList.setItems(clients);
+
+        clientList.setCellFactory(listView -> new CheckBoxListCell<>(client -> selectionMap.get(client)) {
+            @Override
+            public void updateItem(ClientDetailsResponse item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (item != null && !empty) {
+                    setText(item.getFullName());
+                } else {
+                    setText(null);
+                }
+            }
+        });
+
+        Button confirmBtn = new Button("Confirm Selection");
+
+        confirmBtn.setOnAction(e -> {
+            selectedIterationClients.clear();
+
+            for (Map.Entry<ClientDetailsResponse, BooleanProperty> entry : selectionMap.entrySet()) {
+                if (entry.getValue().get()) {
+                    selectedIterationClients.add(entry.getKey());
+                }
+            }
+
+            System.out.println("Selected Clients:");
+            for (ClientDetailsResponse c : selectedIterationClients) {
+                System.out.println("- " + c.getFullName());
+            }
+
+            stage.close();
+        });
+
+        root.getChildren().addAll(clientList, confirmBtn);
+
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+    }
+    
+    private void removeIterationButtons() {
+
+        iterationsBox.getChildren().removeIf(node ->
+                node instanceof Button &&
+                (((Button) node).getText().equals("Add Clients") ||
+                 ((Button) node).getText().equals("Submit Iteration"))
+        );
+    }
+    
+    
 }

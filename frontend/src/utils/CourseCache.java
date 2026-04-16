@@ -43,6 +43,7 @@ public class CourseCache {
     public static Integer getCourseID(String courseName) {
         return courseNameToIdMap.get(courseName);
     }
+
     
     public static void setCourseDetails(List<CourseDetailsResponse> courses) {
         courseDetailsMap.clear();

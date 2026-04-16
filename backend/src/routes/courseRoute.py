@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models.models import Course, CourseHasInstructors, CourseIterations, User, CourseSessions
+from models.models import Course, CourseHasInstructors, CourseIterations, User, CourseSessions, Client, SessionAttendance, CourseHasClients
 from utils.database import get_db
-from classes.course import CourseSummary, CourseDetailsResponse, InstructorOut, IterationOut, CourseCreateRequest
+from classes.course import CourseSummary, CourseDetailsResponse, InstructorOut, IterationOut, CourseCreateRequest, CreateIterationWithClientsRequest
+
 
 router = APIRouter()
 
@@ -128,6 +129,95 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
 
         db.commit()
         return {"message": "Course created successfully", "courseID": new_course.courseID}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/createIteration/")
+def create_iteration_with_clients(
+    request: CreateIterationWithClientsRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        course = db.query(Course).filter(Course.courseID == request.courseID).first()
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+
+
+        new_iteration = CourseIterations(
+            courseID=request.courseID,
+            courseStartDate=request.courseStartDate,
+            courseEndDate=request.courseEndDate,
+            courseLocation=request.courseLocation
+        )
+        db.add(new_iteration)
+        db.flush()
+
+
+
+        sessions = []
+        for session_date in request.sessionDates:
+            session = CourseSessions(
+                courseID=request.courseID,
+                iterationID=new_iteration.iterationID,
+                sessionDate=session_date
+            )
+            db.add(session)
+            sessions.append(session)
+
+        db.flush()
+
+        enrollment_count = 0
+        attendance_count = 0
+
+        if request.clientIDs:
+
+            for client_id in request.clientIDs:
+
+                client = db.query(Client).filter(Client.clientID == client_id).first()
+                if not client:
+                    raise HTTPException(status_code=404, detail=f"Client {client_id} not found")
+
+                enrollment = db.query(CourseHasClients).filter(
+                    CourseHasClients.clientID == client_id,
+                    CourseHasClients.iterationID == new_iteration.iterationID
+                ).first()
+
+                if not enrollment:
+                    enrollment = CourseHasClients(
+                        clientID=client_id,
+                        courseID=request.courseID,
+                        iterationID=new_iteration.iterationID
+                    )
+                    db.add(enrollment)
+                    enrollment_count += 1
+
+                for session in sessions:
+
+                    existing_attendance = db.query(SessionAttendance).filter(
+                        SessionAttendance.sessionID == session.sessionID,
+                        SessionAttendance.clientID == client_id
+                    ).first()
+
+                    if not existing_attendance:
+                        attendance = SessionAttendance(
+                            sessionID=session.sessionID,
+                            clientID=client_id,
+                            attendance=0
+                        )
+                        db.add(attendance)
+                        attendance_count += 1
+
+        db.commit()
+
+        return {
+            "message": "Iteration created and clients enrolled successfully",
+            "iterationID": new_iteration.iterationID,
+            "sessions_created": len(sessions),
+            "clients_enrolled": enrollment_count,
+            "attendance_records_created": attendance_count
+        }
 
     except Exception as e:
         db.rollback()

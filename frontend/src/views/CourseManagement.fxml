@@ -23,7 +23,7 @@
             <padding>
                 <Insets top="10" right="10" bottom="10" left="10"/>
             </padding>
-            <Label text="Course Name" style="-fx-font-weight: bold;"/>
+            <Label fx:id="courseNameLabel" text="Course Name" style="-fx-font-weight: bold;"/>
             <ListView fx:id="courseListView" prefWidth="200" prefHeight="400"/>
             <HBox spacing="10">
                 <Label text="Sort:" />
@@ -43,7 +43,7 @@
                 <Label text="Course Name:" />
                 <TextField fx:id="courseNameField" maxWidth="300"/>
 
-                <Label text="Instructors:" />
+                <Label fx:id="instructorLabel" text="Instructors:" />
                 <VBox fx:id="instructorBox" spacing="5" maxWidth="300">
                     <HBox spacing="10">
                         <ComboBox fx:id="instructorCombo" promptText="Select Instructor"/>
@@ -52,10 +52,10 @@
                     <ListView fx:id="instructorListView" maxHeight="100"/>
                 </VBox>
 
-                <Label text="Course Length (weeks):" />
+                <Label fx:id="courseLengthLabel" text="Course Length (weeks):" />
                 <TextField fx:id="courseLengthField" maxWidth="100"/>
 
-                <Label text="Iterations (optional):" />
+                <Label fx:id="iterationsLabel" text="Iterations (optional):" />
                 
 				<VBox fx:id="iterationsBox" spacing="10">
 				    <HBox spacing="10">

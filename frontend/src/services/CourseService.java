@@ -151,4 +151,44 @@ public class CourseService {
         }
     }
     
+    public static boolean createIteration(models.CreateIterationRequest requestData) {
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            ObjectMapper mapper = new ObjectMapper();
+
+            String json = mapper.writeValueAsString(requestData);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/createIteration/"))
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            System.out.println("Create Iteration Request:");
+            System.out.println(json);
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Status: " + response.statusCode());
+            System.out.println("Response: " + response.body());
+
+            if (response.statusCode() == 200 || response.statusCode() == 201) {
+                return true;
+            } else {
+                System.err.println("Create iteration failed: HTTP " + response.statusCode());
+                return false;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    
 }

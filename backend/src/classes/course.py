@@ -36,3 +36,15 @@ class CourseCreateRequest(BaseModel):
     courseLength: int
     instructorIDs: List[int]  # Assuming front-end sends actual user IDs
     iterations: Optional[List[IterationIn]] = []
+
+from typing import List, Optional
+from datetime import date
+from pydantic import BaseModel
+
+class CreateIterationWithClientsRequest(BaseModel):
+    courseID: int
+    clientIDs: Optional[List[int]] = None
+    courseStartDate: date
+    courseEndDate: date
+    courseLocation: Optional[str] = None
+    sessionDates: List[date]
