@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from utils.database import get_db
-from classes.statistics import StatisticsResponse, MonthlyCompletion, DateRangeStatsResponse, AttendanceStats, CompletionStats
+from classes.statistics import StatisticsResponse, MonthlyCompletion, DateRangeStatsResponse, AttendanceStats, CompletionStats, SummaryStats, TimeBucket, TimeSeries, DateRangeStatsResponse
 from models.models import SessionAttendance, CourseSessions, CourseHasClients, CourseIterations
 
 router = APIRouter()
@@ -73,91 +73,162 @@ def get_statistics(db: Session = Depends(get_db)):
 
 
 @router.get("/statistics/range/", response_model=DateRangeStatsResponse)
-def get_statistics_by_date_range(
-    startDate: date,
-    endDate: date,
-    db: Session = Depends(get_db)
-):
-    try:
-        # ----------------------------------
-        # Validate input
-        # ----------------------------------
-        if endDate < startDate:
-            raise HTTPException(status_code=400, detail="endDate must be after startDate")
+def get_statistics_by_date_range(startDate: date, endDate: date, db: Session = Depends(get_db)):
 
-        # ----------------------------------
-        # 1. Courses (Iterations) in range
-        # Overlap logic:
-        # start <= endDate AND end >= startDate
-        # ----------------------------------
-        courses_in_range = db.query(func.count()).select_from(CourseIterations).filter(
-            CourseIterations.courseStartDate <= endDate,
-            CourseIterations.courseEndDate >= startDate
-        ).scalar() or 0
+    if endDate < startDate:
+        raise HTTPException(status_code=400, detail="Invalid date range")
 
-        # ----------------------------------
-        # 2. Sessions in range
-        # ----------------------------------
-        sessions_in_range = db.query(func.count()).select_from(CourseSessions).filter(
-            CourseSessions.sessionDate >= startDate,
-            CourseSessions.sessionDate <= endDate
-        ).scalar() or 0
+    # =====================================================
+    # 🔹 SUMMARY (reuse your previous logic)
+    # =====================================================
 
-        # ----------------------------------
-        # 3. Session Attendance (X / Y)
-        # ----------------------------------
-        attendance_query = db.query(SessionAttendance).join(
-            CourseSessions,
-            SessionAttendance.sessionID == CourseSessions.sessionID
-        ).filter(
-            CourseSessions.sessionDate >= startDate,
-            CourseSessions.sessionDate <= endDate
+    courses_in_range = db.query(func.count()).select_from(CourseIterations).filter(
+        CourseIterations.courseStartDate <= endDate,
+        CourseIterations.courseEndDate >= startDate
+    ).scalar() or 0
+
+    sessions_in_range = db.query(func.count()).select_from(CourseSessions).filter(
+        CourseSessions.sessionDate.between(startDate, endDate)
+    ).scalar() or 0
+
+    attendance_query = db.query(SessionAttendance).join(
+        CourseSessions,
+        SessionAttendance.sessionID == CourseSessions.sessionID
+    ).filter(
+        CourseSessions.sessionDate.between(startDate, endDate)
+    )
+
+    total_attendance = attendance_query.count()
+    attended_count = attendance_query.filter(SessionAttendance.attendance == True).count()
+
+    completion_query = db.query(CourseHasClients).join(
+        CourseIterations,
+        CourseHasClients.iterationID == CourseIterations.iterationID
+    ).filter(
+        CourseIterations.courseStartDate <= endDate,
+        CourseIterations.courseEndDate >= startDate
+    )
+
+    total_enrollments = completion_query.count()
+
+    completed_count = completion_query.filter(
+        CourseHasClients.completionDate != None,
+        CourseHasClients.completionDate.between(startDate, endDate)
+    ).count()
+
+    summary = SummaryStats(
+        coursesInRange=courses_in_range,
+        sessionsInRange=sessions_in_range,
+        sessionAttendance=AttendanceStats(
+            attended=attended_count,
+            total=total_attendance
+        ),
+        courseCompletion=CompletionStats(
+            completed=completed_count,
+            total=total_enrollments
         )
+    )
 
-        total_attendance = attendance_query.count()
+    # =====================================================
+    # 🔹 MONTHLY GROUPING
+    # =====================================================
 
-        attended_count = attendance_query.filter(
+    monthly_sessions = db.query(
+        extract('month', CourseSessions.sessionDate).label("month"),
+        func.count().label("count")
+    ).filter(
+        CourseSessions.sessionDate.between(startDate, endDate)
+    ).group_by("month").all()
+
+    monthly_attendance = db.query(
+        extract('month', CourseSessions.sessionDate).label("month"),
+        func.count().label("count")
+    ).join(SessionAttendance).filter(
+        CourseSessions.sessionDate.between(startDate, endDate),
+        SessionAttendance.attendance == True
+    ).group_by("month").all()
+
+    monthly_completions = db.query(
+        extract('month', CourseHasClients.completionDate).label("month"),
+        func.count().label("count")
+    ).filter(
+        CourseHasClients.completionDate != None,
+        CourseHasClients.completionDate.between(startDate, endDate)
+    ).group_by("month").all()
+
+    # Convert to lookup maps
+    session_map = {int(r.month): r.count for r in monthly_sessions}
+    attendance_map = {int(r.month): r.count for r in monthly_attendance}
+    completion_map = {int(r.month): r.count for r in monthly_completions}
+
+    month_names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
+
+
+    monthly_data = []
+
+    for m in range(1, 13):
+        if m < startDate.month or m > endDate.month:
+            continue
+
+        monthly_data.append(TimeBucket(
+            label=month_names[m-1],
+            sessions=session_map.get(m, 0),
+            attendance=attendance_map.get(m, 0),
+            completions=completion_map.get(m, 0)
+        ))
+
+    # =====================================================
+    # 🔹 WEEKLY GROUPING (Python-based)
+    # =====================================================
+
+    def format_date(d):
+        return d.strftime("%b %#d")
+
+    weekly_data = []
+
+    current_start = startDate
+    week_num = 1
+
+    while current_start <= endDate:
+        current_end = min(current_start + timedelta(days=6), endDate)
+
+        label = f"{format_date(current_start)} - {format_date(current_end)}"
+
+        sessions = db.query(func.count()).select_from(CourseSessions).filter(
+            CourseSessions.sessionDate.between(current_start, current_end)
+        ).scalar() or 0
+
+        attendance = db.query(func.count()).select_from(SessionAttendance).join(
+            CourseSessions
+        ).filter(
+            CourseSessions.sessionDate.between(current_start, current_end),
             SessionAttendance.attendance == True
-        ).count()
+        ).scalar() or 0
 
-        # ----------------------------------
-        # 4. Course Completion (X / Y)
-        # Y = enrollments linked to iterations in range
-        # X = completionDate within range
-        # ----------------------------------
-        completion_query = db.query(CourseHasClients).join(
-            CourseIterations,
-            CourseHasClients.iterationID == CourseIterations.iterationID
-        ).filter(
-            CourseIterations.courseStartDate <= endDate,
-            CourseIterations.courseEndDate >= startDate
-        )
-
-        total_enrollments = completion_query.count()
-
-        completed_count = completion_query.filter(
+        completions = db.query(func.count()).select_from(CourseHasClients).filter(
             CourseHasClients.completionDate != None,
-            CourseHasClients.completionDate >= startDate,
-            CourseHasClients.completionDate <= endDate
-        ).count()
+            CourseHasClients.completionDate.between(current_start, current_end)
+        ).scalar() or 0
 
-        # ----------------------------------
-        # Return response
-        # ----------------------------------
-        return DateRangeStatsResponse(
-            startDate=startDate,
-            endDate=endDate,
-            coursesInRange=courses_in_range,
-            sessionsInRange=sessions_in_range,
-            sessionAttendance=AttendanceStats(
-                attended=attended_count,
-                total=total_attendance
-            ),
-            courseCompletion=CompletionStats(
-                completed=completed_count,
-                total=total_enrollments
-            )
+        weekly_data.append(TimeBucket(
+            label=label,
+            sessions=sessions,
+            attendance=attendance,
+            completions=completions
+        ))
+
+        current_start = current_end + timedelta(days=1)
+        week_num += 1
+
+    # =====================================================
+    # FINAL RESPONSE
+    # =====================================================
+
+    return DateRangeStatsResponse(
+        summary=summary,
+        timeSeries=TimeSeries(
+            monthly=monthly_data,
+            weekly=weekly_data
         )
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    )

@@ -12,6 +12,8 @@ module LifeBuilders_FrontEnd {
 	requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.databind;
 	requires java.net.http;
+	requires javafx.swing;
+	requires java.desktop;
 
     opens application to javafx.graphics, javafx.fxml;
     opens controllers to javafx.fxml;

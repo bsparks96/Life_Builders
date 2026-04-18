@@ -49,12 +49,23 @@
         <VBox spacing="10" alignment="CENTER">
             <padding>
                 <Insets top="10" bottom="20"/>
-            </padding>
-            <Label text="Generate Report:" style="-fx-underline: true;"/>
-            <HBox spacing="20" alignment="CENTER">
-                <Button fx:id="clientReportBtn" text="Client" style="-fx-background-color: green; -fx-text-fill: white;" onAction="#handleClientReport"/>
-                <Button fx:id="courseReportBtn" text="Course" style="-fx-background-color: green; -fx-text-fill: white;" onAction="#handleCourseReport"/>
-            </HBox>
+            </padding> 
+            
+            <Label text="Generate Custom Date Range Report"
+            	style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+		
+		    <HBox spacing="10" alignment="CENTER">
+		        <DatePicker fx:id="startDatePicker" promptText="Start Date"/>
+		        <DatePicker fx:id="endDatePicker" promptText="End Date"/>
+		    </HBox>
+		
+		    <HBox spacing="10" alignment="CENTER">
+		        <ToggleButton fx:id="monthlyToggle" text="Monthly"/>
+		        <ToggleButton fx:id="weeklyToggle" text="Weekly"/>
+		    </HBox>
+		
+		    <Button fx:id="generateReportBtn" text="Generate" 
+		            onAction="#handleGenerateReport"/>
         </VBox>
     </bottom>
 

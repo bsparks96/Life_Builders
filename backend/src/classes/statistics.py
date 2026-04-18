@@ -26,3 +26,23 @@ class DateRangeStatsResponse(BaseModel):
     sessionsInRange: int
     sessionAttendance: AttendanceStats
     courseCompletion: CompletionStats
+
+class SummaryStats(BaseModel):
+    coursesInRange: int
+    sessionsInRange: int
+    sessionAttendance: AttendanceStats
+    courseCompletion: CompletionStats
+
+class TimeBucket(BaseModel):
+    label: str
+    sessions: int
+    attendance: int
+    completions: int
+
+class TimeSeries(BaseModel):
+    monthly: List[TimeBucket]
+    weekly: List[TimeBucket]
+
+class DateRangeStatsResponse(BaseModel):
+    summary: SummaryStats
+    timeSeries: TimeSeries
