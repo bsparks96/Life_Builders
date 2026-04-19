@@ -82,7 +82,7 @@ class CompletionUpdate(BaseModel):
     clientID: int
     courseID: int
     iterationID: int
-    completionDate: date  # allow null to "clear"
+    completionDate: date
 
 
 class CompletionBulkUpdate(BaseModel):

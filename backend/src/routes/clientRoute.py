@@ -24,7 +24,7 @@ def create_client(client: ClientCreate, db: Session = Depends(get_db)):
             clientEducation=client.clientEducation
         )
         db.add(db_client)
-        db.flush()  # allows access to db_client.clientID before commit
+        db.flush()
 
         # 2. Add incarceration periods
         for period in client.incarcerationPeriods:
@@ -159,7 +159,7 @@ def enroll_client_in_course(
 
         created_count = 0
 
-        # 4. Create attendance records (ONLY if missing)
+        # 4. Create attendance records if missing
         for session in sessions:
 
             existing_attendance = db.query(SessionAttendance).filter(

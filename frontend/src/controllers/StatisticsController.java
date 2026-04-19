@@ -68,7 +68,6 @@ public class StatisticsController {
     @FXML
     public void initialize() {
 
-        // LOAD FROM CACHE
 
         int totalClients = ClientDetailsCache.isLoaded()
                 ? ClientDetailsCache.getAllClients().size()
@@ -81,7 +80,6 @@ public class StatisticsController {
         totalClientsLabel.setText("Total Clients: " + totalClients);
         totalCoursesLabel.setText("Total Courses: " + totalCourses);
 
-        // LOAD STATISTICS CACHE
 
         if (!StatisticsCache.isLoaded()) {
             completionRateLabel.setText("Completion Rate: (loading)");
@@ -91,7 +89,6 @@ public class StatisticsController {
 
         StatisticsResponse stats = StatisticsCache.getStatistics();
 
-        // SET LABELS
 
         activeParticipantsLabel.setText(
                 "Active Monthly Participants: " + stats.activeMonthlyParticipants
@@ -101,7 +98,6 @@ public class StatisticsController {
                 "Completion Rate: " + String.format("%.1f", stats.completionRate) + "%"
         );
 
-        // BUILD CHART
 
         Map<String, Integer> monthMap = new HashMap<>();
 
@@ -126,7 +122,6 @@ public class StatisticsController {
         monthlyToggle.setToggleGroup(toggleGroup);
         weeklyToggle.setToggleGroup(toggleGroup);
 
-        // Default selection
         monthlyToggle.setSelected(true);
     }
 
@@ -228,7 +223,6 @@ public class StatisticsController {
 
         VBox root = new VBox();
 
-        // summaryBox.setPrefWidth(200);
 
         root.getChildren().addAll(content, buttonRow);
 

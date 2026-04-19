@@ -553,7 +553,6 @@ public class CourseManagementController {
                         sessionDates.add(date);
                     }
 
-                    // 🔥 FORCE REFRESH
                     sessionCalendar.setDayCellFactory(null);
                     updateCalendarHighlighting();
                 });
@@ -770,7 +769,6 @@ public class CourseManagementController {
             }
         });
 
-        // 🔷 Enroll button
         Button enrollBtn = new Button("Enroll Selected");
 
         enrollBtn.setOnAction(e -> {
@@ -921,11 +919,9 @@ public class CourseManagementController {
     	
     	removeIterationButtons();
 
-    	// Get course name
 
     	String courseName = utils.CourseCache.courseMap.get(courseID);
     	
-        // Reset / show course field
 
         courseNameField.setVisible(true);
         courseNameField.setManaged(true);
@@ -1026,28 +1022,12 @@ public class CourseManagementController {
                 showAlert(Alert.AlertType.ERROR, "Failed to create iteration.");
             }
 
-            /*
-            System.out.println("Start Date: " + (start != null ? start : "null"));
-            System.out.println("End Date: " + (end != null ? end : "null"));
 
-            System.out.println("Session Dates:");
-            for (String s : sessions) {
-                System.out.println(" - " + s);
-            }
-
-            System.out.println("Clients:");
-            for (ClientDetailsResponse c : selectedIterationClients) {
-                System.out.println(" - " + c.getFullName() + " (ID: " + c.getClientID() + ")");
-            }
-
-            System.out.println("--------------------------------");
-            */
         });
         
         iterationsBox.getChildren().addAll(addClientsBtn, submitBtn);
 
 
-        // Hide everything else
 
         instructorBox.setVisible(false);
         instructorBox.setManaged(false);

@@ -24,15 +24,12 @@ def create_user(
         db: Session = Depends(get_db),
         current_user: dict = Depends(require_admin)
 ):
-    # Check if user already exists
     existing_user = get_user_by_username(db, user.username)
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    # Hash password
     hashed_password = hash_password(user.password)
 
-    # Create user
     new_user = User(
         username=user.username,
         passwordHash=hashed_password,

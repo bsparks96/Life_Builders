@@ -15,8 +15,6 @@ def get_statistics(db: Session = Depends(get_db)):
     current_month = datetime.now().month
     current_year = datetime.now().year
 
-    # Active Monthly Participants
-
     active_monthly = db.query(
         func.count(func.distinct(SessionAttendance.clientID))
     ).join(
@@ -27,9 +25,6 @@ def get_statistics(db: Session = Depends(get_db)):
         extract('year', CourseSessions.sessionDate) == current_year
     ).scalar() or 0
 
-
-    # Completion Rate
-
     total = db.query(func.count()).select_from(CourseHasClients).scalar() or 0
 
     completed = db.query(func.count()).filter(
@@ -39,8 +34,6 @@ def get_statistics(db: Session = Depends(get_db)):
 
     completion_rate = round((completed * 100.0 / total), 1) if total > 0 else 0.0
 
-
-    # Monthly Completions (Jan–Dec)
 
     results = db.query(
         extract('month', CourseHasClients.completionDate).label("month"),
@@ -78,9 +71,6 @@ def get_statistics_by_date_range(startDate: date, endDate: date, db: Session = D
     if endDate < startDate:
         raise HTTPException(status_code=400, detail="Invalid date range")
 
-    # =====================================================
-    # 🔹 SUMMARY (reuse your previous logic)
-    # =====================================================
 
     courses_in_range = db.query(func.count()).select_from(CourseIterations).filter(
         CourseIterations.courseStartDate <= endDate,
@@ -129,10 +119,6 @@ def get_statistics_by_date_range(startDate: date, endDate: date, db: Session = D
         )
     )
 
-    # =====================================================
-    # 🔹 MONTHLY GROUPING
-    # =====================================================
-
     monthly_sessions = db.query(
         extract('month', CourseSessions.sessionDate).label("month"),
         func.count().label("count")
@@ -178,9 +164,6 @@ def get_statistics_by_date_range(startDate: date, endDate: date, db: Session = D
             completions=completion_map.get(m, 0)
         ))
 
-    # =====================================================
-    # 🔹 WEEKLY GROUPING (Python-based)
-    # =====================================================
 
     def format_date(d):
         return d.strftime("%b %#d")
@@ -221,9 +204,6 @@ def get_statistics_by_date_range(startDate: date, endDate: date, db: Session = D
         current_start = current_end + timedelta(days=1)
         week_num += 1
 
-    # =====================================================
-    # FINAL RESPONSE
-    # =====================================================
 
     return DateRangeStatsResponse(
         summary=summary,

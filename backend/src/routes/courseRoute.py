@@ -87,7 +87,7 @@ def get_all_course_details(db: Session = Depends(get_db)):
 @router.post("/courseCreate/")
 def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
     try:
-        # Step 1: Insert into Courses
+        # 1: Insert into Courses
         new_course = Course(
             courseName=request.courseName,
             courseLength=request.courseLength
@@ -95,7 +95,7 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
         db.add(new_course)
         db.flush() # get courseID
 
-        # Step 2: Link instructors
+        # 2: Link instructors
         for instructor_id in request.instructorIDs:
             user = db.query(User).filter_by(userID=instructor_id).first()
             if not user:
@@ -107,7 +107,7 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
             )
             db.add(instructor_link)
 
-            # Step 3: Add iterations (optional)
+        # 3: Add iterations (optional)
         for iteration in request.iterations:
             new_iteration = CourseIterations(
                 courseID=new_course.courseID,
@@ -116,9 +116,9 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
                 courseLocation=iteration.courseLocation
             )
             db.add(new_iteration)
-            db.flush()  # get iterationID
+            db.flush()
 
-            # 🔥 Create sessions for this iteration
+
             for session_date in iteration.sessions:
                 session = CourseSessions(
                     courseID=new_course.courseID,

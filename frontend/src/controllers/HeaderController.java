@@ -50,7 +50,6 @@ public class HeaderController {
             FXMLLoader viewLoader = new FXMLLoader(HeaderController.class.getResource("/views/" + fxml));
             Parent viewRoot = viewLoader.load();
 
-            // Save the current view for tracking
             MainLayoutController layoutController = mainLoader.getController();
             layoutController.setContent(viewRoot);
 

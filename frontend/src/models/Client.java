@@ -22,7 +22,6 @@ public class Client {
         return clientLastName;
     }
 
-    // --- Setters ---
     public void setClientID(int clientID) {
         this.clientID = clientID;
     }

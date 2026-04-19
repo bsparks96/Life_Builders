@@ -34,7 +34,7 @@ class IterationIn(BaseModel):
 class CourseCreateRequest(BaseModel):
     courseName: str
     courseLength: int
-    instructorIDs: List[int]  # Assuming front-end sends actual user IDs
+    instructorIDs: List[int]
     iterations: Optional[List[IterationIn]] = []
 
 from typing import List, Optional
