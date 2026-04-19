@@ -48,4 +48,16 @@ public class SessionManager {
         userID = -1;
         role = null;
     }
+    
+    public static boolean isAdmin() {
+        return role != null && role.equalsIgnoreCase("Admin");
+    }
+
+    public static boolean isStaff() {
+        return role != null && role.equalsIgnoreCase("Staff");
+    }
+
+    public static boolean isGuest() {
+        return role != null && role.equalsIgnoreCase("Guest");
+    }
 }

@@ -25,5 +25,11 @@
                 onAction="#handleStatistics"
                 minWidth="140" minHeight="100" />
     </HBox>
+    
+    <Button fx:id="adminButton"
+            text="Admin Control"
+            onAction="#handleAdminControl"
+            minWidth="120"
+            style="-fx-background-color: #444; -fx-text-fill: white;" />
 
 </VBox>

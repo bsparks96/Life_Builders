@@ -31,8 +31,9 @@ import javax.imageio.ImageIO;
 
 import utils.ClientDetailsCache;
 import utils.CourseCache;
+import utils.PermissionUtil;
 import utils.StatisticsCache;
-
+import utils.UIUtil;
 import models.StatisticsResponse;
 
 import java.io.File;
@@ -123,6 +124,7 @@ public class StatisticsController {
         weeklyToggle.setToggleGroup(toggleGroup);
 
         monthlyToggle.setSelected(true);
+        UIUtil.setEnabled(generateReportBtn, PermissionUtil.canGenerateReports());
     }
 
     @FXML

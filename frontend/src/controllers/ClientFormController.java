@@ -34,6 +34,8 @@ public class ClientFormController {
     @FXML private TextField ssnField;
     @FXML private TextField genderField;
     @FXML private ComboBox<String> educationCombo;
+    @FXML private Button submitButton;
+    @FXML private Button preAssessmentButton;
     
 
     @FXML private ComboBox<String> courseCombo1;
@@ -73,6 +75,15 @@ public class ClientFormController {
                 courseCombo1.show(); 
             }
         });
+        
+        boolean canSubmit = utils.PermissionUtil.canSubmitClientEntry();
+
+        utils.UIUtil.setEnabled(submitButton, canSubmit);
+        utils.UIUtil.setEnabled(preAssessmentButton, canSubmit);
+        
+        boolean canEdit = utils.PermissionUtil.canSubmitClientEntry();
+
+        setFormEditable(canEdit);
     }
 
     @FXML
@@ -82,11 +93,23 @@ public class ClientFormController {
 
     @FXML
     private void handlePreAssessment() {
-        // TODO: Transition to pre-assessment view
+        
+    	if (!utils.PermissionUtil.canSubmitClientEntry()) {
+            System.out.println("Unauthorized pre-assessment attempt");
+            return;
+        }
+    	
+    	// TODO: Transition to pre-assessment view
     }
 
     @FXML
     private void handleSubmit() {
+    	
+    	if (!utils.PermissionUtil.canSubmitClientEntry()) {
+            System.out.println("Unauthorized submit attempt");
+            return;
+        }
+    	
     	ClientEntryRequest request = new ClientEntryRequest();
 
         request.firstName = firstNameField.getText();
@@ -185,5 +208,17 @@ public class ClientFormController {
 
         newRow.getChildren().addAll(dynamicCourseCombo, courseDate, addButton);
         coursesBox.getChildren().add(newRow);
+    }
+    
+    private void setFormEditable(boolean editable) {
+
+        firstNameField.setEditable(editable);
+        middleField.setEditable(editable);
+        lastNameField.setEditable(editable);
+        dobPicker.setDisable(!editable);
+        ssnField.setEditable(editable);
+        genderField.setEditable(editable);
+        educationCombo.setDisable(!editable);
+        courseCombo1.setDisable(!editable);
     }
 }

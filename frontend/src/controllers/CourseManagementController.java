@@ -4,6 +4,8 @@ import javafx.fxml.FXML;
 import utils.ClientDetailsCache;
 import utils.CourseCache;
 import utils.CourseSessionCache;
+import utils.PermissionUtil;
+import utils.UIUtil;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
@@ -131,7 +133,7 @@ public class CourseManagementController {
 
         iterationStartPicker.setOnAction(e -> generateSessionDates());
         iterationEndPicker.setOnAction(e -> generateSessionDates());
-
+        UIUtil.setVisible(newCourseButton, PermissionUtil.canCreateCourse());
     }
 
     @FXML
@@ -369,7 +371,14 @@ public class CourseManagementController {
 
 	        HBox buttonRow = new HBox(10);
 	        Button updateBtn = new Button("Update");
-	        updateBtn.setOnAction(e -> handleUpdateAttendance());
+	        updateBtn.setDisable(!PermissionUtil.canModifyCourseData());
+	        updateBtn.setOnAction(e -> {
+	            if (!PermissionUtil.canModifyCourseData()) {
+	                System.out.println("Unauthorized attempt");
+	                return;
+	            }
+	            handleUpdateAttendance();
+	        });
 	        buttonRow.getChildren().addAll(updateBtn);
 	        
 	        for (IterationOut iteration : details.getIterations()) {
@@ -398,17 +407,23 @@ public class CourseManagementController {
 	            
 	            Button addClientsBtn = new Button("Add Clients");
 	            addClientsBtn.setOnAction(e -> {
-	                openAddClientsDialog(iterationID, courseID);
+	            	if (!PermissionUtil.canModifyCourseData()) return;
+	            	openAddClientsDialog(iterationID, courseID);
 	            });
 	            
 	            Button completionBtn = new Button("Completion");
 
 	            completionBtn.setOnAction(e -> {
-	                openCompletionDialog(iterationID, courseID);
+	            	if (!PermissionUtil.canModifyCourseData()) return;
+	            	openCompletionDialog(iterationID, courseID);
 	            });
 
+	            viewClientsBtn.setDisable(!PermissionUtil.canViewClients());
+	            addClientsBtn.setDisable(!PermissionUtil.canModifyCourseData());
+	            completionBtn.setDisable(!PermissionUtil.canModifyCourseData());
 	            iterationRow.getChildren().addAll(iterationLabel, viewClientsBtn, addClientsBtn, completionBtn);
 
+	            
 	            iterationContainer.getChildren().add(iterationRow);
 	            
 	            
@@ -472,9 +487,11 @@ public class CourseManagementController {
 	        detailBox.getChildren().add(attendanceSection);
 
 	        Label pastLabel = new Label("Past Iterations:");
-
+	        
+	        
 	        Button addIterationBtn = new Button("Add Iteration");
-
+	        UIUtil.setVisible(addIterationBtn, PermissionUtil.canAddIteration());
+	        
 	        addIterationBtn.setOnAction(e -> {
 	             openAddIterationForm(courseID);
 	        });
@@ -864,6 +881,7 @@ public class CourseManagementController {
 
 
             Button updateBtn = new Button("Update");
+            updateBtn.setDisable(!PermissionUtil.canModifyCourseData());
 
             updateBtn.setOnAction(e -> {
 
