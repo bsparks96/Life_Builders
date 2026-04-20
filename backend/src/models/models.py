@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Boolean
 from sqlalchemy.orm import relationship
 from utils.database import Base
 
@@ -11,6 +11,7 @@ class User(Base):
     firstName = Column(String(100))
     lastName = Column(String(100))
     userRole = Column(String(50))
+    mustChangePassword = Column(Boolean, default=False)
 
 class Client(Base):
     __tablename__ = "Clients"

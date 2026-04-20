@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="controllers.AdminController">
+
+    <padding>
+        <Insets top="20" left="20" right="20" bottom="20"/>
+    </padding>
+
+    <left>
+        <VBox spacing="10">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="User Table"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="createUserButton"
+                        text="Create User"
+                        onAction="#handleCreateUser"/>
+            </HBox>
+
+            <!-- User List -->
+            <ListView fx:id="userListView"
+                      prefWidth="250"
+                      prefHeight="400"/>
+
+        </VBox>
+    </left>
+    
+    
+    <center>
+        <VBox spacing="15">
+        	<padding>
+        		<Insets left="40"/>
+        	</padding>
+        	
+            <GridPane hgap="10" vgap="10">
+
+                <Label text="First Name:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="firstNameField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="Last Name:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextField fx:id="lastNameField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                <Label text="User Role:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <ComboBox fx:id="roleComboBox" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                <Label text="User ID:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <TextField fx:id="userIDField" editable="false"
+                           GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                <Label text="Username:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                <TextField fx:id="usernameField"
+                           GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+            </GridPane>
+
+            <HBox spacing="10">
+                <Button fx:id="updateButton"
+                        text="Update"
+                        onAction="#handleUpdateUser"/>
+
+                <Button fx:id="resetPasswordButton"
+                        text="Reset Password"
+                        onAction="#handleResetPassword"/>
+            </HBox>
+
+        </VBox>
+    </center>
+
+</BorderPane>
