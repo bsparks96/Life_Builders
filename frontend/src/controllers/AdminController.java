@@ -7,8 +7,11 @@ import java.util.Map;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import models.UserDetails;
@@ -369,7 +372,79 @@ public class AdminController {
     @FXML
     private void handleResetPassword() {
         if (!PermissionUtil.canManageUsers()) return;
+        
+        
+        if (!PermissionUtil.canManageUsers()) return;
 
+        String username = userListView.getSelectionModel().getSelectedItem();
+
+        if (username == null) {
+            System.out.println("No user selected");
+            return;
+        }
+
+        Integer userID = UserCache.getUserID(username);
+
+        if (userID == null) {
+            System.out.println("User ID not found");
+            return;
+        }
+
+        models.ResetPasswordResponse response =
+                services.UserService.resetPassword(userID);
+
+        if (response == null) {
+            System.out.println("Reset failed");
+            return;
+        }
+
+        showTempPasswordPopup(response.getTemporaryPassword());
+        
         System.out.println("Reset Password clicked");
+    }
+    
+    private void showTempPasswordPopup(String tempPassword) {
+
+        Stage stage = new Stage();
+        stage.setTitle("Temporary Password");
+
+        VBox root = new VBox(15);
+        root.setPadding(new Insets(20));
+
+        Label title = new Label("Temporary Password");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+
+        TextField passwordField = new TextField(tempPassword);
+        passwordField.setEditable(false);
+
+        Label warning = new Label(
+            "⚠ This password will not be shown again.\nPlease copy it now."
+        );
+        warning.setStyle("-fx-text-fill: red;");
+
+        Button copyButton = new Button("Copy");
+
+        copyButton.setOnAction(e -> {
+            Clipboard clipboard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.putString(tempPassword);
+            clipboard.setContent(content);
+            System.out.println("Copied to clipboard");
+        });
+
+        Button closeButton = new Button("Close");
+        closeButton.setOnAction(e -> stage.close());
+
+        root.getChildren().addAll(
+                title,
+                passwordField,
+                copyButton,
+                warning,
+                closeButton
+        );
+
+        Scene scene = new Scene(root, 350, 220);
+        stage.setScene(scene);
+        stage.show();
     }
 }

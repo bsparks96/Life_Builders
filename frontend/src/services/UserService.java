@@ -7,6 +7,7 @@ import models.UserDetails;
 import models.UserUpdateRequest;
 import utils.ApiConfig;
 import utils.SessionManager;
+import models.ResetPasswordResponse;
 import models.UserCreateRequest;
 
 import java.net.URI;
@@ -130,7 +131,6 @@ public class UserService {
                 return null;
             }
 
-            // 🔥 Parse userID from response
             JsonNode node = mapper.readTree(response.body());
 
             if (node.has("userID")) {
@@ -183,6 +183,47 @@ public class UserService {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+    
+    public static ResetPasswordResponse resetPassword(int userID) {
+
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build();
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            String json = mapper.writeValueAsString(
+                    java.util.Map.of("userID", userID)
+            );
+
+            System.out.println("Reset Password JSON: " + json);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/users/reset-password/"))
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Response Status: " + response.statusCode());
+            System.out.println("Response Body: " + response.body());
+
+            if (response.statusCode() != 200) {
+                return null;
+            }
+
+            return mapper.readValue(response.body(), ResetPasswordResponse.class);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

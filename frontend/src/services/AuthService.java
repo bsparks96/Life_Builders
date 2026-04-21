@@ -53,9 +53,15 @@ public class AuthService {
             }
 
             if (status == 200) {
-                JsonNode json = mapper.readTree(responseBody.toString());
+            	JsonNode json = mapper.readTree(responseBody.toString());
+
                 String token = json.get("access_token").asText();
+
+                boolean mustChange = json.has("mustChangePassword") &&
+                                     json.get("mustChangePassword").asBoolean();
+
                 SessionManager.setToken(token);
+                SessionManager.setMustChangePassword(mustChange);
                 return true;
             } else {
                 System.err.println("Login failed: " + responseBody);
@@ -109,7 +115,39 @@ public class AuthService {
         }
     }
 
+    public static boolean changePassword(String currentPassword, String newPassword) {
 
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            ObjectMapper mapper = new ObjectMapper();
+
+            String json = mapper.writeValueAsString(
+                    java.util.Map.of(
+                            "currentPassword", currentPassword,
+                            "newPassword", newPassword
+                    )
+            );
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ApiConfig.BASE_URL + "/api/users/change-password/"))
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .header("Authorization", "Bearer " + SessionManager.getToken())
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(json)) // 🔥 FIX
+                    .build();
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            return response.statusCode() == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     private static class LoginRequest {
         public String username;
         public String password;

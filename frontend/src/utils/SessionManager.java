@@ -7,6 +7,15 @@ public class SessionManager {
     private static String username = null;
     private static int userID = -1;
     private static String role = null;
+    private static boolean mustChangePassword = false;
+
+    public static void setMustChangePassword(boolean value) {
+        mustChangePassword = value;
+    }
+
+    public static boolean mustChangePassword() {
+        return mustChangePassword;
+    }
 
 
     public static void setToken(String newToken) {
