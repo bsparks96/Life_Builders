@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models.models import Client, ClientIncarcerationPeriods, CourseHasClients, Course, CourseSessions, SessionAttendance, CourseIterations
 from utils.database import get_db
+from utils.change_logger import log_change
 from classes.client import ClientSummary, ClientCreate, ClientDetailsResponse, ClientCourseEnroll, AttendanceBulkUpdate, AttendanceUpdate, IterationAttendanceResponse, CompletionBulkUpdate
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
@@ -193,7 +194,17 @@ def update_attendance(
     db: Session = Depends(get_db)
 ):
     try:
+
+        # adding for temp purposes, will need to add "current_user = Depends(get_current_user) to signature above and remove the hardcoded user
+
+        current_user = {
+            "userID": 10001,
+            "username": "jasaa",
+            "role": "admin"
+        }
+
         updated_count = 0
+        iteration_ids = set()
 
         for record in request.updates:
             attendance = db.query(SessionAttendance).filter(
@@ -209,6 +220,24 @@ def update_attendance(
 
             attendance.attendance = record.attendance
             updated_count += 1
+
+            # adding for logging purposes
+            session = db.query(CourseSessions).filter(
+                CourseSessions.sessionID == record.sessionID
+            ).first()
+
+            if session:
+                iteration_ids.add(session.iterationID)
+
+        db.commit()
+
+
+        # logging
+
+        for iterationID in iteration_ids:
+            log_change(db, "Attendance", iterationID, "UPDATE", current_user["userID"])
+
+        log_change(db, "Statistics", 0, "UPDATE", current_user["userID"])
 
         db.commit()
 

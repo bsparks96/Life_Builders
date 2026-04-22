@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from utils.database import Base
 
@@ -91,3 +91,12 @@ class SessionAttendance(Base):
     clientID = Column(Integer, ForeignKey("Clients.clientID"))
     attendance = Column(Integer, default=0)
 
+class ChangeLog(Base):
+    __tablename__ = "ChangeLog"
+
+    changeID = Column(Integer, primary_key=True, autoincrement=True)
+    entityType = Column(String(50), nullable=False)
+    entityID = Column(Integer, nullable=False)
+    operationType = Column(String(20), nullable=False)  # maps to ENUM
+    updatedBy = Column(Integer, nullable=True)
+    updatedAt = Column(DateTime)

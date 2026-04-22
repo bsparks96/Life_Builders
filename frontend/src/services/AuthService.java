@@ -134,7 +134,7 @@ public class AuthService {
                     .header("Authorization", "Bearer " + SessionManager.getToken())
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .PUT(HttpRequest.BodyPublishers.ofString(json)) // 🔥 FIX
+                    .PUT(HttpRequest.BodyPublishers.ofString(json)) 
                     .build();
 
             HttpResponse<String> response =
