@@ -37,4 +37,9 @@ public class UserDetailsCache {
     public static void addUser(UserDetails user) {
         userDetailsMap.put(user.getUserID(), user);
     }
+    
+    public static void updateUser(UserDetails user) {
+        userDetailsMap.put(user.getUserID(), user);
+    }
+    
 }

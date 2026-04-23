@@ -64,4 +64,9 @@ public class CourseCache {
     public static List<CourseDetailsResponse> getAllCourseDetails() {
         return new ArrayList<>(courseDetailsMap.values());
     }
+    
+    public static void updateCourse(CourseDetailsResponse course) {
+        courseDetailsMap.put(course.getCourseID(), course);
+    }
+    
 }

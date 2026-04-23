@@ -28,6 +28,10 @@ public class ClientDetailsCache {
     public static boolean isLoaded() {
         return !clientDetailsMap.isEmpty();
     }
+    
+    public static void updateClient(ClientDetailsResponse client) {
+        clientDetailsMap.put(client.getClientID(), client);
+    }
 
 
     public static void clear() {

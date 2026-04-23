@@ -18,6 +18,7 @@ import services.UserService;
 import utils.ClientDetailsCache;
 import utils.CourseCache;
 import utils.CourseSessionCache;
+import utils.SyncManager;
 import utils.ThreadPoolManager;
 import javafx.scene.Parent;
 import javafx.scene.Node;
@@ -49,6 +50,7 @@ public class MainLayoutController {
             this.headerController.getChildren().setAll(header.getChildren());
 
             loadDataInBackground();
+            SyncManager.start(); // we need to check to see if this actually starts after the initial load. 
 
         } catch (IOException e) {
             e.printStackTrace();
