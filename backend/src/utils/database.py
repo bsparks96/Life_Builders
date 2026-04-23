@@ -8,7 +8,11 @@ load_dotenv()
 DB_URL = os.getenv("DB_URL")  # e.g. mysql+mysqlconnector://user:pass@localhost:3306/lifebuilders
 
 try:
-    engine = create_engine(DB_URL)
+    engine = create_engine(
+        DB_URL,
+        pool_pre_ping=True,
+        pool_recycle=1800
+    )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base = declarative_base()
 except Exception as e:

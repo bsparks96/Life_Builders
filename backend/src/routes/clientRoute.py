@@ -43,6 +43,18 @@ def create_client(client: ClientCreate, db: Session = Depends(get_db)):
                 completionDate=course.completionDate
             ))
 
+        # adding for temp purposes, will need to add "current_user = Depends(get_current_user) to signature above and remove the hardcoded user
+
+        current_user = {
+            "userID": 10001,
+            "username": "jasaa",
+            "role": "admin"
+        }
+
+        db.commit()
+
+        log_change(db, "Client", db_client.clientID, "INSERT", current_user["userID"])
+
         db.commit()
 
     except Exception as e:
@@ -176,6 +188,20 @@ def enroll_client_in_course(
                 )
                 db.add(attendance)
                 created_count += 1
+
+        db.commit()
+
+        # adding for temp purposes, will need to add "current_user = Depends(get_current_user) to signature above and remove the hardcoded user
+
+        current_user = {
+            "userID": 10001,
+            "username": "jasaa",
+            "role": "admin"
+        }
+
+        log_change(db, "Iteration", request.iterationID, "UPDATE", current_user["userID"])
+        log_change(db, "Client", request.clientID, "UPDATE", current_user["userID"])
+        log_change(db, "Statistics", 0, "UPDATE", current_user["userID"])
 
         db.commit()
 
@@ -350,6 +376,13 @@ def update_completion_dates(
 
             enrollment.completionDate = record.completionDate
             updated_count += 1
+
+        db.commit()
+
+        for record in request.updates:
+            log_change(db, "Client", record.clientID, "UPDATE", current_user["userID"])
+
+        log_change(db, "Statistics", 0, "UPDATE", current_user["userID"])
 
         db.commit()
 

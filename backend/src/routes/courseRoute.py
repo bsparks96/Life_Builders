@@ -4,6 +4,7 @@ from models.models import Course, CourseHasInstructors, CourseIterations, User, 
 from utils.database import get_db
 from classes.course import CourseSummary, CourseDetailsResponse, InstructorOut, IterationOut, CourseCreateRequest, CreateIterationWithClientsRequest
 
+from utils.change_logger import log_change
 
 router = APIRouter()
 
@@ -108,6 +109,9 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
             db.add(instructor_link)
 
         # 3: Add iterations (optional)
+
+        created_iteration_ids = []
+
         for iteration in request.iterations:
             new_iteration = CourseIterations(
                 courseID=new_course.courseID,
@@ -118,6 +122,7 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
             db.add(new_iteration)
             db.flush()
 
+            created_iteration_ids.append(new_iteration.iterationID)
 
             for session_date in iteration.sessions:
                 session = CourseSessions(
@@ -128,7 +133,26 @@ def create_course(request: CourseCreateRequest, db: Session = Depends(get_db)):
                 db.add(session)
 
         db.commit()
-        return {"message": "Course created successfully", "courseID": new_course.courseID}
+
+        current_user = {
+            "userID": 10001
+        }
+
+        log_change(db, "Course", new_course.courseID, "INSERT", current_user["userID"])
+
+        for iteration_id in created_iteration_ids:
+            log_change(db, "Iteration", iteration_id, "INSERT", current_user["userID"])
+
+        log_change(db, "Statistics", 0, "UPDATE", current_user["userID"])
+
+        db.commit()
+
+        return {
+            "message": "Course created successfully",
+            "courseID": new_course.courseID
+        }
+
+        # return {"message": "Course created successfully", "courseID": new_course.courseID}
 
     except Exception as e:
         db.rollback()
@@ -208,6 +232,22 @@ def create_iteration_with_clients(
                         )
                         db.add(attendance)
                         attendance_count += 1
+
+        db.commit()
+
+        current_user = {
+            "userID": 10001
+        }
+
+        log_change(db, "Iteration", new_iteration.iterationID, "INSERT", current_user["userID"])
+
+        log_change(db, "Attendance", new_iteration.iterationID, "UPDATE", current_user["userID"])
+
+        if request.clientIDs:
+            for client_id in request.clientIDs:
+                log_change(db, "Client", client_id, "UPDATE", current_user["userID"])
+
+        log_change(db, "Statistics", 0, "UPDATE", current_user["userID"])
 
         db.commit()
 

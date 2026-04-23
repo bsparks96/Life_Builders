@@ -7,6 +7,7 @@ from utils.security import hash_password, verify_password, create_access_token, 
 from passlib.context import CryptContext
 import secrets, string
 
+from utils.change_logger import log_change
 
 router = APIRouter()
 
@@ -44,6 +45,14 @@ def create_user(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    current_user = {
+    "userID": 10001
+    }
+
+    log_change(db, "User", new_user.userID, "INSERT", current_user["userID"])
+
+    db.commit()
 
     return {
         "message": "User created successfully",
@@ -156,6 +165,14 @@ def update_user(request: UserUpdateRequest, db: Session = Depends(get_db)):
         # 🔹 5. Commit transaction
         db.commit()
         db.refresh(user)
+
+        current_user = {
+            "userID": 10001
+        }
+
+        log_change(db, "User", user.userID, "UPDATE", current_user["userID"])
+
+        db.commit()
 
         return {
             "message": "User updated successfully",
