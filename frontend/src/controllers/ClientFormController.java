@@ -110,6 +110,46 @@ public class ClientFormController {
             return;
         }
     	
+    	
+    	
+    	List<String> missingFields = new ArrayList<>();
+
+    	if (firstNameField.getText() == null || firstNameField.getText().isBlank()) {
+    	    missingFields.add("First Name");
+    	}
+
+    	if (lastNameField.getText() == null || lastNameField.getText().isBlank()) {
+    	    missingFields.add("Last Name");
+    	}
+
+    	if (dobPicker.getValue() == null) {
+    	    missingFields.add("Date of Birth");
+    	}
+
+    	if (genderField.getText() == null || genderField.getText().isBlank()) {
+    	    missingFields.add("Gender");
+    	}
+
+    	if (educationCombo.getValue() == null || educationCombo.getValue().isBlank()) {
+    	    missingFields.add("Education Level");
+    	}
+    	
+    	if (!missingFields.isEmpty()) {
+
+    	    StringBuilder message = new StringBuilder("Please fill in the following required fields:\n\n");
+
+    	    for (String field : missingFields) {
+    	        message.append("- ").append(field).append("\n");
+    	    }
+
+    	    Alert alert = new Alert(Alert.AlertType.WARNING);
+    	    alert.setTitle("Missing Required Fields");
+    	    alert.setContentText(message.toString());
+    	    alert.showAndWait();
+
+    	    return; 
+    	}
+    	
     	ClientEntryRequest request = new ClientEntryRequest();
 
         request.firstName = firstNameField.getText();

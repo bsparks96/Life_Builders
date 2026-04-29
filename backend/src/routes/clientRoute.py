@@ -379,6 +379,10 @@ def update_completion_dates(
 
         db.commit()
 
+        current_user = {
+            "userID": 10001
+        }
+
         for record in request.updates:
             log_change(db, "Client", record.clientID, "UPDATE", current_user["userID"])
 

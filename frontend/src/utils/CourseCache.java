@@ -43,6 +43,15 @@ public class CourseCache {
     public static Integer getCourseID(String courseName) {
         return courseNameToIdMap.get(courseName);
     }
+    
+    public static String getCourseNameByID(int courseID) {
+        for (var entry : courseNameToIdMap.entrySet()) {
+            if (entry.getValue() == courseID) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
 
     
     public static void setCourseDetails(List<CourseDetailsResponse> courses) {

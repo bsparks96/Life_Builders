@@ -838,6 +838,8 @@ public class CourseManagementController {
 
         VBox root = new VBox(10);
         root.setPrefSize(350, 450);
+        
+        String courseName = utils.CourseCache.getCourseNameByID(courseID);
 
 
 
@@ -858,21 +860,78 @@ public class CourseManagementController {
             completionChanges.clear();
 
             for (var client : clients) {
-
-                HBox row = new HBox(10);
-
-                Label nameLabel = new Label(client.name);
-                nameLabel.setMinWidth(200);
-
-                CheckBox completeBox = new CheckBox("Completed");
-
+                
                 int clientID = client.clientID;
 
+                var clientDetails = utils.ClientDetailsCache.getClient(clientID);
+
+                String completionDate = null;
+
+                if (clientDetails != null && clientDetails.getCompletedCourses() != null) {
+                    for (var completed : clientDetails.getCompletedCourses()) {
+                        if (completed.getCourseName().equals(courseName)) {
+                            completionDate = completed.getCompletionDate();
+                            break;
+                        }
+                    }
+                }
+                
+                System.out.println("Client: " + client.name);
+
+                if (clientDetails != null && clientDetails.getCompletedCourses() != null) {
+                    for (var c : clientDetails.getCompletedCourses()) {
+                        System.out.println("   Course: " + c.getCourseName() +
+                                           " | Date: " + c.getCompletionDate());
+                    }
+                }
+
+                HBox row = new HBox(10);
+                row.setAlignment(Pos.CENTER_LEFT);
+
+                Label nameLabel = new Label(client.name);
+                nameLabel.setPrefWidth(140);
+                nameLabel.setMinWidth(140);
+                nameLabel.setMaxWidth(140);
+                nameLabel.setStyle("-fx-text-overrun: ellipsis;");
+
+                Label dateLabelDisplay = new Label(
+                        completionDate != null ? completionDate : "Not completed"
+                );
+                dateLabelDisplay.setPrefWidth(100);
+                dateLabelDisplay.setMinWidth(100);
+                dateLabelDisplay.setMaxWidth(100);
+
+                CheckBox completeBox = new CheckBox();
+
+                if (completionDate != null) {
+                    completeBox.setSelected(true);
+                    completionChanges.put(clientID, true);
+                } else {
+                    completionChanges.put(clientID, false);
+                }
+
+                HBox checkboxContainer = new HBox(completeBox);
+                checkboxContainer.setAlignment(Pos.CENTER_RIGHT);
+                checkboxContainer.setPrefWidth(80);
+                checkboxContainer.setMinWidth(80);
+                checkboxContainer.setMaxWidth(80);
+
                 completeBox.setOnAction(e -> {
-                    completionChanges.put(clientID, completeBox.isSelected());
+                    boolean selected = completeBox.isSelected();
+                    completionChanges.put(clientID, selected);
+
+                    if (selected) {
+                        LocalDate selectedDate = datePicker.getValue();
+                        if (selectedDate != null) {
+                            dateLabelDisplay.setText(selectedDate.toString());
+                        }
+                    } else {
+                        dateLabelDisplay.setText("Not completed");
+                    }
                 });
 
-                row.getChildren().addAll(nameLabel, completeBox);
+                row.getChildren().addAll(nameLabel, dateLabelDisplay, checkboxContainer);
+
                 listContainer.getChildren().add(row);
             }
 
@@ -896,18 +955,15 @@ public class CourseManagementController {
 
                 completionChanges.forEach((clientID, completed) -> {
 
+                    if (!completed) return; 
+
                     CompletionUpdateRequest.CompletionRecord record =
                             new CompletionUpdateRequest.CompletionRecord();
 
                     record.clientID = clientID;
                     record.courseID = courseID;       
                     record.iterationID = iterationID;
-
-                    if (completed) {
-                        record.completionDate = selectedDate.toString(); 
-                    } else {
-                        record.completionDate = null;
-                    }
+                    record.completionDate = selectedDate.toString();
 
                     updates.add(record);
                 });
